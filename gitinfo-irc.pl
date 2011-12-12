@@ -107,6 +107,7 @@ sub main_start {
 		return 0;
 	});
 	add_handler('irc_public', 'core', \&on_irc_public);
+	add_handler('irc_msg', 'core', \&on_irc_msg);
 	$irc->yield(register => 'all');
 	$irc->yield(connect => {});
 	return;
@@ -154,6 +155,13 @@ sub public_command_authed($$) {
 }
 
 sub on_irc_public {
+	my $nick = nickonly($_[ARG0]);
+	return 1 if ($config->{hardcore_ignore} && BotDb::has_priv($nick, 'no_react'));
+	return 0 if ($_[ARG2] !~ /^\.([a-z_]+)\s*(.*)$/);
+	return BotPlugin::maybe_irc_command($nick, $_[ARG1], lc($1), $2, $_[ARG3]);
+}
+
+sub on_irc_msg {
 	my $nick = nickonly($_[ARG0]);
 	return 1 if ($config->{hardcore_ignore} && BotDb::has_priv($nick, 'no_react'));
 	return 0 if ($_[ARG2] !~ /^\.([a-z_]+)\s*(.*)$/);
