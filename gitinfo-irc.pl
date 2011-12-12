@@ -86,7 +86,7 @@ sub main_start {
 	$heap = $_[HEAP];
 	$irc->plugin_add('AutoJoin', POE::Component::IRC::Plugin::AutoJoin->new(Channels => {$config->{channel} => undef}));
 	$irc->plugin_add('Connector', POE::Component::IRC::Plugin::Connector->new());
-	$irc->plugin_add('NickServID', POE::Component::IRC::Plugin::NickServID->new(Password => $config->{nick_pwd}));
+	$irc->plugin_add('NickServID', POE::Component::IRC::Plugin::NickServID->new(Password => $config->{nick_pwd})) if defined $config->{nick_pwd};
 	for (@{$config->{autoload_plugins}}) {
 		BotPlugin::load($_);
 	}
