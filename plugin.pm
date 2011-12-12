@@ -9,7 +9,7 @@ my %irc_commands = ();
 sub init {
 	$irc_commands{priv} = sub {
 		my ($source, $targets, $args, $auth) = @_;
-		my $rpath = BotIrc::return_path(@_) // return 0;
+		my $rpath = &BotIrc::return_path(@_) // return 0;
 		return 1 if !BotIrc::public_check_priv($source, 'priv', $auth);
 		my @args = split(/\s+/, $args, 3);
 		if ($args[0] eq 'add') {
@@ -24,7 +24,7 @@ sub init {
 	};
 	$irc_commands{plugin} = sub {
 		my ($source, $targets, $args, $auth) = @_;
-		my $rpath = BotIrc::return_path(@_) // return 0;
+		my $rpath = &BotIrc::return_path(@_) // return 0;
 		return 1 if !BotIrc::public_check_priv($source, 'plugin', $auth);
 		my @args = split(/\s+/, $args, 3);
 		if ($args[0] eq 'load') {
