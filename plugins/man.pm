@@ -6,12 +6,12 @@ use POE;
 	irc_commands => {
 		man_update => sub {
 			my ($source, $targets, $args, $auth) = @_;
-			return 0 if !BotIrc::public_check_target($targets);
+			my $rpath = &BotIrc::return_path(@_) // return 0;
 			return 1 if !BotIrc::public_command_authed($source, $auth);
 
 			umask(0022);
 			system("cd $BotIrc::config->{man_repodir} && git pull -q &");
-			$BotIrc::irc->yield(privmsg => $BotIrc::config->{channel} => "$source: manpage index updating. Please allow a few seconds before using again.");
+			$BotIrc::irc->yield(privmsg => $rpath => "$source: manpage index updating. Please allow a few seconds before using again.");
 			$BotIrc::heap->{man_cache} = undef;
 			return 1;
 		}

@@ -30,23 +30,23 @@ use POE;
 	irc_commands => {
 		trigger_edit => sub {
 			my ($source, $targets, $args, $auth) = @_;
-			return 0 if !BotIrc::public_check_target($targets);
+			my $rpath = &BotIrc::return_path(@_) // return 0;
 			return 1 if !BotIrc::public_command_authed($source, $auth);
 
 			my ($trigger, $exp) = split(/\s+/, $args, 2);
 			if (!$trigger || !$exp) {
-				$BotIrc::irc->yield(privmsg => $BotIrc::config->{channel}, "$source: syntax: .edit_trigger <name> <contents>");
+				$BotIrc::irc->yield(privmsg => $rpath => "$source: syntax: .edit_trigger <name> <contents>");
 				return 1;
 			}
 			if ($trigger =~ /[^a-z_-]/i) {
-				$BotIrc::irc->yield(privmsg => $BotIrc::config->{channel}, "$source: valid trigger names must consist of [a-zA-Z_-]");
+				$BotIrc::irc->yield(privmsg => $rpath => "$source: valid trigger names must consist of [a-zA-Z_-]");
 				return 1;
 			}
 			return 1 if !BotIrc::public_check_antipriv($source, 'no_trigger_edit');
 			my $res = $BotDb::db->selectrow_hashref("SELECT * FROM tt_triggers WHERE trigger=?", {}, $trigger);
 			if (!defined $res) {
 				if (defined $BotDb::db->err) {
-					$BotIrc::irc->yield(privmsg => $BotIrc::config->{channel}, "$source: uh-oh... something went wrong. Maybe this helps: $BotDb::db->errstr");
+					$BotIrc::irc->yield(privmsg => $rpath => "$source: uh-oh... something went wrong. Maybe this helps: $BotDb::db->errstr");
 					BotIrc::error("text_trigger: fetching trigger info for $trigger: $BotDb::db->errstr");
 					return 1;
 				}
@@ -65,7 +65,7 @@ use POE;
 				$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $trigger, $exp, $source);
 				$BotIrc::heap->{ttr_cache}{$trigger} = $exp;
 			}
-			$BotIrc::irc->yield(privmsg => $BotIrc::config->{channel}, "$source: okay.");
+			$BotIrc::irc->yield(privmsg => $rpath => "$source: okay.");
 		}
 	},
 	irc_on_public => sub {
