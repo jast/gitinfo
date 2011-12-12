@@ -35,7 +35,7 @@ use POE;
 
 			my ($trigger, $exp) = split(/\s+/, $args, 2);
 			if (!$trigger || !$exp) {
-				$BotIrc::irc->yield(privmsg => $rpath => "$source: syntax: .edit_trigger <name> <contents>");
+				$BotIrc::irc->yield(privmsg => $rpath => "$source: syntax: .trigger_edit <name> <contents>");
 				return 1;
 			}
 			if ($trigger =~ /[^a-z_-]/i) {
