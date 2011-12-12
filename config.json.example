@@ -1,0 +1,25 @@
+{
+	"nick":			"gitinfo",
+	"altnick_prefix":	"gitinfo_",		// temp nick used when primary nick is taken
+	"altnick_length":	3,			// length of temp nick suffix
+	"nick_pwd":		"hackme",		// for identifying with nickserv (required)
+	"channel":		"#git",			// channel to join after things have been initialized
+	"username":		"gitinfo",
+	"realname":		"#git info bot, run by jast",
+	"local_addr":		"",			// optional
+	"server":		"chat.freenode.net",
+	"server_port":		6667,			// optional
+	"ipv6":			false,			// optional
+
+	"superadmin":		"jast",			// magically authorized to do everything
+	"db_file":		"gitinfo.sqlite",	// created automatically
+	"control_enabled":	true,			// remote control server
+	"control_addr":		"",			// optional
+	"control_port":		11111,
+	"control_ipv6":		false,			// optional
+	"control_pwd":		"hackme",		// used by control clients to authenticate
+	"http_loginurl":	"http://example.org/login.php?id=", // Login URL for users (code is appended automatically). Web part is not included!
+
+	"autoload_plugins":	[],
+	"hardcore_ignore":	false			// completely ignore people who have the no_react priv
+}
