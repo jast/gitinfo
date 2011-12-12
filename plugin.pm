@@ -18,6 +18,7 @@ sub init {
 			BotDb::del_priv($args[1], $args[2]);
 		} else {
 			$BotIrc::irc->yield(privmsg => $rpath => "$source: nuh-uh. invalid command.");
+			return 1;
 		}
 		$BotIrc::irc->yield(privmsg => $rpath => "$source: okay.");
 		return 1;
