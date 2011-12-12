@@ -29,7 +29,10 @@ sub init {
 		return 1 if !BotIrc::public_check_priv($source, 'plugin', $auth);
 		my @args = split(/\s+/, $args, 3);
 		if ($args[0] eq 'load') {
-			load($args[1]);
+			load($args[1],
+				sub { $BotIrc::irc->yield(privmsg => $rpath => shift) },
+				sub { $BotIrc::irc->yield(privmsg => $rpath => shift) }
+			);
 		}
 	};
 }
