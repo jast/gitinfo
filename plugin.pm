@@ -13,9 +13,9 @@ sub init {
 		return 1 if !BotIrc::public_check_priv($source, 'priv', $auth);
 		my @args = split(/\s+/, $args, 3);
 		if ($args[0] eq 'add') {
-			BotDb::add_priv($args[1], $args[2]);
+			BotDb::add_priv(lc($args[1]), lc($args[2]));
 		} elsif ($args[0] eq 'del') {
-			BotDb::del_priv($args[1], $args[2]);
+			BotDb::del_priv(lc($args[1]), lc($args[2]));
 		} else {
 			$BotIrc::irc->yield(privmsg => $rpath => "$source: nuh-uh. invalid command.");
 			return 1;
