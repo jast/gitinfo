@@ -22,7 +22,7 @@ use POE;
 	},
 	control_commands => {
 		trigger_list => sub {
-			my ($client, $data, $args) = @_;
+			my ($client, $data, @args) = @_;
 			BotCtl::send($client, "ok", to_json($BotIrc::heap->{ttr_cache}, {utf8 => 1, canonical => 1}));
 			return 1;
 		},
