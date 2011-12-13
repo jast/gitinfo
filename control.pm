@@ -2,13 +2,26 @@ package BotCtl;
 use common::sense;
 use POE;
 
-sub init {}
+sub init {
+	BotPlugin::add_core_ctl_command('auth', sub {
+		my ($client, $data, @args) = @_;
+		if (@args != 1) {
+			$client->put("error:syntax:This command needs exactly one argument.");
+			return 1;
+		}
+		if (@args == 1 && $args[0] eq $BotIrc::config->{control_pwd}) {
+			$client->put("ok");
+			$data->{level} = '!control';
+		}
+		# TODO (perhaps): user auth
+	});
+}
 
 sub on_connected {
 	my $id = $_[HEAP]{client}->ID;
 	$_[HEAP]{ctl_sessions}{$id} = {
 		client => $_[HEAP]{client},
-		level => 'guest',
+		level => '!guest',
 	};
 }
 
@@ -36,6 +49,21 @@ sub send {
 
 sub client_data {
 	return $_[HEAP]{ctl_sessions}{shift->ID};
+}
+
+sub is_guest { return $_[1]->{level} eq '!guest'; }
+sub is_control { return $_[1]->{level} eq '!control'; }
+
+sub get_user {
+	my $u = $_[1]->{level};
+	return undef if ($u =~ /^!/);
+	$u;
+}
+
+sub require_control {
+	return 1 if &is_guest;
+	$_[0]->put("error:needpriv:Insufficient privileges.");
+	return 0;
 }
 
 1;
