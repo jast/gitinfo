@@ -72,7 +72,7 @@ use POE;
 	},
 	irc_on_anymsg => sub {
 		my $rpath = &BotIrc::return_path(@_[ARG0, ARG1]) // return 0;
-		return 0 if ($_[ARG2] !~ /(?:^|\s)!([a-z_-]+)(?:$|\s)/i);
+		return 0 if ($_[ARG2] !~ /(?:^|\s)!([a-z_-]+)/i);
 		my $exp;
 
 		$exp = $_[HEAP]->{ttr_cache}{$1};

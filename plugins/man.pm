@@ -20,7 +20,7 @@ use POE;
 		}
 	},
 	irc_on_anymsg => sub {
-		return 0 if ($_[ARG2] !~ /\bman\s+([a-z-]+)(?:$|\s)/);
+		return 0 if ($_[ARG2] !~ /\bman\s+([a-z-]+)/);
 		my $page = $1;
 		my $rpath = &BotIrc::return_path(@_[ARG0, ARG1]) // return 0;
 		my $nick = BotIrc::nickonly($_[ARG0]);
@@ -37,7 +37,7 @@ use POE;
 				$BotIrc::heap->{man_cache}{$_} = undef;
 			}
 		}
-		if ($_[ARG2] =~ /\bman\s+git\s+([a-z-]+)(?:$|\s)/) {
+		if ($_[ARG2] =~ /\bman\s+git\s+([a-z-]+)/) {
 			$altpage = "git-$1";
 			$page = $altpage if exists $BotIrc::heap->{man_cache}{$altpage};
 		}
