@@ -101,7 +101,8 @@ sub maybe_irc_command($$$$$) {
 sub maybe_ctl_command($$$$) {
 	my ($client, $data, $cmd, @args) = @_;
 	return 0 if (!exists $control_commands{$cmd});
-	return $control_commands{$cmd}($client, $data, @args);
+	$control_commands{$cmd}($client, $data, @args);
+	return 1;
 }
 
 sub add_core_ctl_command($$) {
