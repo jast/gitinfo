@@ -170,6 +170,11 @@ sub on_irc_msg {
 
 sub add_handler($$$) {
 	my ($ev, $origin, $code) = @_;
+	if ($ev eq "irc_anymsg") {
+		&add_handler("irc_msg", $origin, $code);
+		&add_handler("irc_public", $origin, $code);
+		return;
+	}
 	if (!exists $handlers{$ev}) {
 		$handlers{$ev} = [];
 		$kernel->state($ev, sub {
