@@ -76,7 +76,7 @@ sub _fetch_privs($) {
 			BotIrc::error("Failed fetching privs for $nick: ".$db->errstr);
 			return undef;
 		}
-		$priv = '';
+		return 0;
 	}
 	my %p = ();
 	foreach my $p (split(/,/, $priv)) {
@@ -106,7 +106,9 @@ sub has_priv($$) {
 
 sub add_priv($$) {
 	my ($nick, $priv) = map(lc, @_);
-	return 0 if (!_fetch_privs($nick));
+	my $fp = _fetch_privs($nick);
+	return 0 if (!defined $fp);
+	add_user($nick) if (!$fp);
 	$privs{$nick}{$priv} = 1;
 	_store_privs($nick);
 }
@@ -119,12 +121,14 @@ sub del_priv($$) {
 }
 
 sub add_user($) {
-	my $nick = shift;
+	my $nick = lc shift;
+	$privs{$nick} = {};
 	$db->do("INSERT INTO users (username) VALUES(?)", {}, $nick);
 }
 
 sub del_user($) {
-	my $nick = shift;
+	my $nick = lc shift;
+	delete $privs{$nick};
 	$db->do("DELETE FROM users WHERE username = ?", {}, $nick);
 }
 
