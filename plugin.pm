@@ -21,7 +21,7 @@ sub init {
 				BotDb::del_priv(lc($args[1]), lc($_));
 			}
 		} else {
-			$BotIrc::irc->yield(privmsg => $rpath => "$source: nuh-uh. invalid command.");
+			$BotIrc::irc->yield(privmsg => $rpath => "$source: invalid sub-command.");
 			return 1;
 		}
 		$BotIrc::irc->yield(privmsg => $rpath => "$source: okay.");
@@ -32,11 +32,17 @@ sub init {
 		my $rpath = &BotIrc::return_path(@_) // return 0;
 		return 1 if !BotIrc::public_check_priv($source, 'plugin', $auth);
 		my @args = split(/\s+/, $args, 3);
+		my $cb = sub { $BotIrc::irc->yield(privmsg => $rpath => shift) };
 		if ($args[0] eq 'load') {
-			load($args[1],
-				sub { $BotIrc::irc->yield(privmsg => $rpath => shift) },
-				sub { $BotIrc::irc->yield(privmsg => $rpath => shift) }
-			);
+			load($args[1], $cb, $cb);
+		} elsif ($args[0] eq 'unload') {
+			unload($args[1], $cb, $cb);
+		} elsif ($args[0] eq 'reload') {
+			unload($args[1], $cb, $cb);
+			load($args[1], $cb, $cb);
+		} else {
+			$BotIrc::irc->yield(privmsg => $rpath => "$source: invalid sub-command.");
+			return 1;
 		}
 	};
 	$irc_commands{user} = sub {
