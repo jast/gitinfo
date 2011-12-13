@@ -15,15 +15,16 @@ use POE;
 			return 1;
 		}
 	},
-	irc_on_public => sub {
+	irc_on_anymsg => sub {
 		return 0 if ($_[ARG2] !~ /\bfaq\s+([a-z-]+)(?:$|\s)/);
-		my $nick = BotIrc::nickonly($_[ARG0]);
 		my $page = $1;
+		my $rpath = &BotIrc::return_path(@_[ARG0, ARG1]) // return 0;
+		my $nick = BotIrc::nickonly($_[ARG0]);
 
 		if (!defined $BotIrc::heap->{faq_cache}) {
 			my $faq = BotIrc::read_file($BotIrc::config->{faq_cachefile}) or do {
-				error("FAQ cache broken: $!");
-				$BotIrc::irc->yield(privmsg => $BotIrc::config->{channel} => "$nick: FAQ cache is broken. $BotIrc::config->{superadmin} has been notified.");
+				BotIrc::error("FAQ cache broken: $!");
+				$BotIrc::irc->yield(privmsg => $rpath => "$nick: FAQ cache is broken. The bot owner has been notified.");
 				return 1;
 			};
 			while ($faq =~ /<span id="([a-z-]+)" title="(.*?)">/g) {
@@ -41,7 +42,8 @@ use POE;
 		if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/) {
 			$recp = "$1: ";
 		}
-		$BotIrc::irc->yield(privmsg => $BotIrc::config->{channel} => "${recp}$info $BotIrc::config->{faq_baseurl}#$page");
+		my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});
+		$BotIrc::irc->yield(privmsg => $target => "${recp}$info $BotIrc::config->{faq_baseurl}#$page");
 		return 1;
 	},
 };

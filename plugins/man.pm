@@ -16,15 +16,16 @@ use POE;
 			return 1;
 		}
 	},
-	irc_on_public => sub {
+	irc_on_anymsg => sub {
 		return 0 if ($_[ARG2] !~ /\bman\s+([a-z-]+)(?:$|\s)/);
-		my $nick = BotIrc::nickonly($_[ARG0]);
 		my $page = $1;
+		my $rpath = &BotIrc::return_path(@_[ARG0, ARG1]) // return 0;
+		my $nick = BotIrc::nickonly($_[ARG0]);
 
 		if (!defined $BotIrc::heap->{man_cache}) {
 			my @mans = BotIrc::read_dir($BotIrc::config->{man_repodir}) or do {
 				error("Manpage cache broken: $!");
-				$BotIrc::irc->yield(privmsg => $BotIrc::config->{channel} => "$nick: manpage cache is broken. $BotIrc::config->{superadmin} has been notified.");
+				$BotIrc::irc->yield(privmsg => $rpath => "$nick: manpage cache is broken. The bot owner has been notified.");
 				return 1;
 			};
 			@mans = grep { $_ =~ /\.html$/ && $_ ne 'index.html' } @mans;
@@ -42,7 +43,8 @@ use POE;
 		if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/) {
 			$recp = "$1: ";
 		}
-		$BotIrc::irc->yield(privmsg => $BotIrc::config->{channel} => "${recp}the $page manpage is available at $BotIrc::config->{man_baseurl}/$page.html");
+		my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});
+		$BotIrc::irc->yield(privmsg => $target => "${recp}the $page manpage is available at $BotIrc::config->{man_baseurl}/$page.html");
 		return 1;
 	},
 };

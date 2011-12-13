@@ -68,9 +68,9 @@ use POE;
 			$BotIrc::irc->yield(privmsg => $rpath => "$source: okay.");
 		}
 	},
-	irc_on_public => sub {
+	irc_on_anymsg => sub {
+		my $rpath = &BotIrc::return_path(@_[ARG0, ARG1]) // return 0;
 		return 0 if ($_[ARG2] !~ /(?:^|\s)!([a-z_-]+)(?:$|\s)/i);
-		return 0 if (lc($_[ARG1][0]) ne lc($BotIrc::config->{channel}));
 		my $exp;
 
 		$exp = $_[HEAP]->{ttr_cache}{$1};
@@ -79,7 +79,8 @@ use POE;
 		if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/) {
 			$recp = "$1: ";
 		}
-		$BotIrc::irc->yield(privmsg => $BotIrc::config->{channel} => "$recp$exp");
+		my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});
+		$BotIrc::irc->yield(privmsg => $target => "$recp$exp");
 		return 1;
 	},
 };

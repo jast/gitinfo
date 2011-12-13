@@ -117,12 +117,12 @@ POE::Kernel->run();
 
 sub nickonly {
 	my $n = shift;
-	$n =~ s/^(.+)!.+$/$1/g;
+	$n =~ s/^([^!]+).*/$1/g;
 	return $n;
 }
 
 sub return_path($$) {
-	my $source = shift;
+	my $source = nickonly(shift);
 	my @targets = @{(shift)};
 	return $source if (grep { lc($config->{nick}) eq lc($_) } @targets);
 	return $config->{channel} if (grep { lc($config->{channel}) eq lc($_) } @targets);
