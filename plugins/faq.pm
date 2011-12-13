@@ -33,7 +33,7 @@ use POE;
 			return 1 if !BotIrc::public_command_authed($source, $auth);
 
 			system("wget --no-check-certificate -q -O '$BotIrc::config->{faq_cachefile}' '$BotIrc::config->{faq_geturl}' &");
-			$BotIrc::irc->yield(privmsg => $rpath => "$source: FAQ is updating. Please allow a few seconds before using again.");
+			BotIrc::msg_or_notice($rpath => "$source: FAQ is updating. Please allow a few seconds before using again.");
 			$BotIrc::heap->{faq_cache} = undef;
 			return 1;
 		}
@@ -44,7 +44,7 @@ use POE;
 		my $rpath = &BotIrc::return_path(@_[ARG0, ARG1]) // return 0;
 		my $nick = BotIrc::nickonly($_[ARG0]);
 
-		$BotIrc::heap->{faq_cacheupdate}(sub { $BotIrc::irc->yield(privmsg => $rpath => "$nick: ".$_); }) or return 1;
+		$BotIrc::heap->{faq_cacheupdate}(sub { BotIrc::msg_or_notice($rpath => "$nick: ".$_); }) or return 1;
 		return 1 if (!exists $BotIrc::heap->{faq_cache}{$page});
 		my $info = $BotIrc::heap->{faq_cache}{$page};
 		if ($info) {
@@ -57,7 +57,7 @@ use POE;
 			$recp = "$1: ";
 		}
 		my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});
-		$BotIrc::irc->yield(privmsg => $target => "${recp}$info $BotIrc::config->{faq_baseurl}#$page");
+		BotIrc::msg_or_notice($target => "${recp}$info $BotIrc::config->{faq_baseurl}#$page");
 		return 1;
 	},
 };

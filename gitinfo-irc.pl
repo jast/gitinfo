@@ -129,6 +129,12 @@ sub return_path($$) {
 	return undef;
 }
 
+sub msg_or_notice($$) {
+	my ($target, $msg) = @_;
+	my $method = ($target =~ /^#/) ? 'privmsg' : 'notice';
+	$irc->yield($method => $target => $msg);
+}
+
 sub public_check_priv($$$) {
 	my ($nick, $priv, $authed) = @_;
 	return 0 if (!public_command_authed($nick, $authed));

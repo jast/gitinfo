@@ -37,18 +37,18 @@ use POE;
 
 			my ($trigger, $exp) = split(/\s+/, $args, 2);
 			if (!$trigger || !$exp) {
-				$BotIrc::irc->yield(privmsg => $rpath => "$source: syntax: .trigger_edit <name> <contents>");
+				BotIrc::msg_or_notice($rpath => "$source: syntax: .trigger_edit <name> <contents>");
 				return 1;
 			}
 			if ($trigger =~ /[^a-z_-]/i) {
-				$BotIrc::irc->yield(privmsg => $rpath => "$source: valid trigger names must consist of [a-zA-Z_-]");
+				BotIrc::msg_or_notice($rpath => "$source: valid trigger names must consist of [a-zA-Z_-]");
 				return 1;
 			}
 			return 1 if !BotIrc::public_check_antipriv($source, 'no_trigger_edit');
 			my $res = $BotDb::db->selectrow_hashref("SELECT * FROM tt_triggers WHERE trigger=?", {}, $trigger);
 			if (!defined $res) {
 				if (defined $BotDb::db->err) {
-					$BotIrc::irc->yield(privmsg => $rpath => "$source: uh-oh... something went wrong. Maybe this helps: $BotDb::db->errstr");
+					BotIrc::msg_or_notice($rpath => "$source: uh-oh... something went wrong. Maybe this helps: $BotDb::db->errstr");
 					BotIrc::error("text_trigger: fetching trigger info for $trigger: $BotDb::db->errstr");
 					return 1;
 				}
@@ -67,7 +67,7 @@ use POE;
 				$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $trigger, $exp, $source);
 				$BotIrc::heap->{ttr_cache}{$trigger} = $exp;
 			}
-			$BotIrc::irc->yield(privmsg => $rpath => "$source: okay.");
+			BotIrc::msg_or_notice($rpath => "$source: okay.");
 		}
 	},
 	irc_on_anymsg => sub {
@@ -82,7 +82,7 @@ use POE;
 			$recp = "$1: ";
 		}
 		my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});
-		$BotIrc::irc->yield(privmsg => $target => "$recp$exp");
+		BotIrc::msg_or_notice($target => "$recp$exp");
 		return 1;
 	},
 };

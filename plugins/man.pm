@@ -14,7 +14,7 @@ use POE;
 
 			umask(0022);
 			system("cd $BotIrc::config->{man_repodir} && git pull -q &");
-			$BotIrc::irc->yield(privmsg => $rpath => "$source: manpage index updating. Please allow a few seconds before using again.");
+			BotIrc::msg_or_notice($rpath => "$source: manpage index updating. Please allow a few seconds before using again.");
 			$BotIrc::heap->{man_cache} = undef;
 			return 1;
 		}
@@ -28,7 +28,7 @@ use POE;
 		if (!defined $BotIrc::heap->{man_cache}) {
 			my @mans = BotIrc::read_dir($BotIrc::config->{man_repodir}) or do {
 				error("Manpage cache broken: $!");
-				$BotIrc::irc->yield(privmsg => $rpath => "$nick: manpage cache is broken. The bot owner has been notified.");
+				BotIrc::msg_or_notice($rpath => "$nick: manpage cache is broken. The bot owner has been notified.");
 				return 1;
 			};
 			@mans = grep { $_ =~ /\.html$/ && $_ ne 'index.html' } @mans;
@@ -47,7 +47,7 @@ use POE;
 			$recp = "$1: ";
 		}
 		my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});
-		$BotIrc::irc->yield(privmsg => $target => "${recp}the $page manpage is available at $BotIrc::config->{man_baseurl}/$page.html");
+		BotIrc::msg_or_notice($target => "${recp}the $page manpage is available at $BotIrc::config->{man_baseurl}/$page.html");
 		return 1;
 	},
 };
