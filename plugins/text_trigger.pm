@@ -20,6 +20,9 @@ use POE;
 			$BotIrc::heap->{ttr_cache}{$_->{trigger}} = $_->{exp};
 		}
 	},
+	before_unload => sub {
+		delete $BotIrc::heap->{ttr_cache};
+	},
 	control_commands => {
 		trigger_list => sub {
 			my ($client, $data, @args) = @_;

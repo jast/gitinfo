@@ -3,6 +3,9 @@ use POE;
 	on_load => sub {
 		$BotIrc::heap->{faq_cache} = undef;
 	},
+	before_unload => sub {
+		delete $BotIrc::heap->{faq_cache};
+	},
 	irc_commands => {
 		faq_update => sub {
 			my ($source, $targets, $args, $auth) = @_;

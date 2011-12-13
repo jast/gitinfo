@@ -3,6 +3,9 @@ use POE;
 	on_load => sub {
 		$BotIrc::heap->{man_cache} = undef;
 	},
+	before_unload => sub {
+		delete $BotIrc::heap->{man_cache};
+	},
 	irc_commands => {
 		man_update => sub {
 			my ($source, $targets, $args, $auth) = @_;
