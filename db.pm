@@ -118,6 +118,16 @@ sub del_priv($$) {
 	_store_privs($nick);
 }
 
+sub add_user($) {
+	my $nick = shift;
+	$db->do("INSERT INTO users (username) VALUES(?)", {}, $nick);
+}
+
+sub del_user($) {
+	my $nick = shift;
+	$db->do("DELETE FROM users WHERE username = ?", {}, $nick);
+}
+
 # }}} ########################################################################
 
 1;

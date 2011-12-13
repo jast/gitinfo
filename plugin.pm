@@ -13,9 +13,13 @@ sub init {
 		return 1 if !BotIrc::public_check_priv($source, 'priv', $auth);
 		my @args = split(/\s+/, $args, 3);
 		if ($args[0] eq 'add') {
-			BotDb::add_priv(lc($args[1]), lc($args[2]));
+			for (split(/\s+/, $args[2])) {
+				BotDb::add_priv(lc($args[1]), lc($_));
+			}
 		} elsif ($args[0] eq 'del') {
-			BotDb::del_priv(lc($args[1]), lc($args[2]));
+			for (split(/\s+/, $args[2])) {
+				BotDb::del_priv(lc($args[1]), lc($_));
+			}
 		} else {
 			$BotIrc::irc->yield(privmsg => $rpath => "$source: nuh-uh. invalid command.");
 			return 1;
@@ -34,6 +38,26 @@ sub init {
 				sub { $BotIrc::irc->yield(privmsg => $rpath => shift) }
 			);
 		}
+	};
+	$irc_commands{user} = sub {
+		my ($source, $targets, $args, $auth) = @_;
+		my $rpath = &BotIrc::return_path(@_) // return 0;
+		return 1 if !BotIrc::public_check_priv($source, 'user', $auth);
+		my @args = split(/\s+/, $args);
+		if (@args != 2) {
+			$BotIrc::irc->yield(privmsg => $rpath => "$source: wrong number of args.");
+			return 1;
+		}
+		if ($args[0] eq 'add') {
+			BotDb::add_user(lc($args[1]));
+		} elsif ($args[0] eq 'del') {
+			BotDb::del_user(lc($args[1]));
+		} else {
+			$BotIrc::irc->yield(privmsg => $rpath => "$source: nuh-uh. invalid command.");
+			return 1;
+		}
+		$BotIrc::irc->yield(privmsg => $rpath => "$source: okay.");
+		return 1;
 	};
 }
 
