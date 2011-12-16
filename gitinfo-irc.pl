@@ -87,9 +87,6 @@ sub main_start {
 	$irc->plugin_add('AutoJoin', POE::Component::IRC::Plugin::AutoJoin->new(Channels => {$config->{channel} => undef}));
 	$irc->plugin_add('Connector', POE::Component::IRC::Plugin::Connector->new());
 	$irc->plugin_add('NickServID', POE::Component::IRC::Plugin::NickServID->new(Password => $config->{nick_pwd})) if defined $config->{nick_pwd};
-	for (@{$config->{autoload_plugins}}) {
-		BotPlugin::load($_);
-	}
 	add_handler('irc_socketerr', 'core', sub {
 		error("IRC: socket error while connecting: ". $_[ARG0]);
 		return 0;
@@ -108,6 +105,9 @@ sub main_start {
 	});
 	add_handler('irc_public', 'core', \&on_irc_public);
 	add_handler('irc_msg', 'core', \&on_irc_msg);
+	for (@{$config->{autoload_plugins}}) {
+		BotPlugin::load($_);
+	}
 	$irc->yield(register => 'all');
 	$irc->yield(connect => {});
 	return;
