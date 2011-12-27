@@ -31,7 +31,7 @@ use POE;
 		},
 		trigger_history => sub {
 			my ($client, $data, @args) = @_;
-			my $res = $BotDb::db->selectall_arrayref("SELECT exp, changed_by, changed_at FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1 AND trigger=? ORDER BY changed_at DESC", {Slice => {}}, $args[0]);
+			my $res = $BotDb::db->selectall_arrayref("SELECT tc_id, exp, changed_by, changed_at FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1 AND trigger=? ORDER BY changed_at DESC", {Slice => {}}, $args[0]);
 			BotCtl::send($client, "ok", to_json($res, {utf8 => 1, canonical => 1}));
 		},
 	},
