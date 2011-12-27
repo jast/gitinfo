@@ -25,6 +25,11 @@ sub on_connected {
 	};
 }
 
+sub on_disconnected {
+	my $id = $_[HEAP]{client}->ID;
+	delete $_[HEAP]{ctl_sessions}{$id};
+}
+
 sub on_input {
 	my ($heap, $input) = @_[HEAP, ARG0];
 	my $client = $heap->{client};

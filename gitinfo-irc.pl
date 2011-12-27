@@ -66,6 +66,7 @@ if ($config->{control_enabled}) {
 		Started		=> sub { info "Control server started."; },
 		ClientFilter	=> POE::Filter::Line->new(Literal => "\012"),
 		ClientConnected	=> \&BotCtl::on_connected,
+		ClientDisconnected	=> \&BotCtl::on_disconnected,
 		ClientInput	=> \&BotCtl::on_input,
 	);
 }
