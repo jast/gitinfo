@@ -147,7 +147,7 @@ sub public_check_priv($$$) {
 sub public_check_antipriv($$) {
 	my ($nick, $priv) = @_;
 	if (BotDb::has_priv($nick, $priv)) {
-		$irc->yield(privmsg => $config->{channel}, "$nick: you are not authorised to perform this action.");
+		$irc->yield(privmsg => $config->{channel}, "$nick: you are not authorised to perform this action (due to $priv).");
 		return 0;
 	}
 	return 1;
