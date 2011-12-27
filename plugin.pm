@@ -45,6 +45,14 @@ sub init {
 			return 1;
 		}
 	};
+	$irc_commands{rehash} = sub {
+		my ($source, $targets, $args, $auth) = @_;
+		my $rpath = &BotIrc::return_path(@_) // return 0;
+		return 1 if !BotIrc::public_check_priv($source, 'rehash', $auth);
+
+		BotIrc::read_config();
+		BotIrc::msg_or_notice($rpath => "$source: okay.");
+	};
 	$irc_commands{user} = sub {
 		my ($source, $targets, $args, $auth) = @_;
 		my $rpath = &BotIrc::return_path(@_) // return 0;
