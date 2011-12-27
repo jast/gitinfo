@@ -48,7 +48,7 @@ sub send {
 }
 
 sub client_data {
-	return $_[HEAP]{ctl_sessions}{shift->ID};
+	return $BotIrc::heap->{ctl_sessions}{shift->ID};
 }
 
 sub is_guest { return $_[1]->{level} eq '!guest'; }
