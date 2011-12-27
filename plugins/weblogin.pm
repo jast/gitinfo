@@ -1,21 +1,22 @@
 use Digest::SHA1 qw(sha1_hex);
 {
 	on_load => sub {
-		my $heap = $BotIrc::heap;
+		my $heap = \%BotIrc::heap;
 		$heap->{websessions} = {};
+		my $ws = $heap->{websessions};
 		$heap->{websessions_cleanup} = sub {
-			for (keys %{$heap->{websessions}}) {
-				next if time() - $heap->{websessions}{$_}{last_used} < $BotIrc::config->{http_sessionpurge}
+			for (keys %$ws) {
+				next if time() - $ws->{$_}{last_used} < $BotIrc::config->{http_sessionpurge}
 			}
 		};
 	},
 	before_unload => sub {
-		delete $BotIrc::heap->{websessions};
+		delete $BotIrc::heap{websessions};
 	},
 	control_commands => {
 		login => sub {
 			my ($client, $data, @args) = @_;
-			my $heap = $BotIrc::heap->{websessions};
+			my $heap = $BotIrc::heap{websessions};
 			if (!exists $heap->{$args[0]}) {
 				BotCtl::send($client, "invalid");
 				return;
@@ -49,7 +50,7 @@ use Digest::SHA1 qw(sha1_hex);
 
 			# evil!
 			my $auth = sha1_hex("$source:$$:".int(rand(1_000_000)).":".time());
-			$BotIrc::heap->{websessions}{$auth} = {
+			$BotIrc::heap{websessions}{$auth} = {
 				username	=> lc($source),
 				last_used	=> time()
 			};

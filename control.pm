@@ -2,6 +2,8 @@ package BotCtl;
 use common::sense;
 use POE;
 
+our %ctl_sessions;
+
 sub init {
 	BotPlugin::add_core_ctl_command('auth', sub {
 		my ($client, $data, @args) = @_;
@@ -19,7 +21,7 @@ sub init {
 
 sub on_connected {
 	my $id = $_[HEAP]{client}->ID;
-	$_[HEAP]{ctl_sessions}{$id} = {
+	$ctl_sessions{$id} = {
 		client => $_[HEAP]{client},
 		level => '!guest',
 	};
@@ -27,7 +29,7 @@ sub on_connected {
 
 sub on_disconnected {
 	my $id = $_[HEAP]{client}->ID;
-	delete $_[HEAP]{ctl_sessions}{$id};
+	delete $ctl_sessions{$id};
 }
 
 sub on_input {
@@ -53,7 +55,7 @@ sub send {
 }
 
 sub client_data {
-	return $BotIrc::heap->{ctl_sessions}{shift->ID};
+	return $ctl_sessions{shift->ID};
 }
 
 sub is_guest { return $_[1]->{level} eq '!guest'; }

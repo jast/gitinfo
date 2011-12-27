@@ -14,20 +14,20 @@ use POE;
 		],
 	},
 	on_load => sub {
-		$BotIrc::heap->{ttr_cache} = {};
+		$BotIrc::heap{ttr_cache} = {};
 		my $res = $BotDb::db->selectall_arrayref("SELECT trigger, exp FROM tt_trigger_contents WHERE approved=1 ORDER BY changed_at DESC", {Slice => {}});
 		for (@$res) {
-			next if (exists $BotIrc::heap->{ttr_cache}{$_->{trigger}});
-			$BotIrc::heap->{ttr_cache}{$_->{trigger}} = $_->{exp};
+			next if (exists $BotIrc::heap{ttr_cache}{$_->{trigger}});
+			$BotIrc::heap{ttr_cache}{$_->{trigger}} = $_->{exp};
 		}
 	},
 	before_unload => sub {
-		delete $BotIrc::heap->{ttr_cache};
+		delete $BotIrc::heap{ttr_cache};
 	},
 	control_commands => {
 		trigger_list => sub {
 			my ($client, $data, @args) = @_;
-			BotCtl::send($client, "ok", to_json($BotIrc::heap->{ttr_cache}, {utf8 => 1, canonical => 1}));
+			BotCtl::send($client, "ok", to_json($BotIrc::heap{ttr_cache}, {utf8 => 1, canonical => 1}));
 		},
 		trigger_history => sub {
 			my ($client, $data, @args) = @_;
@@ -56,7 +56,7 @@ use POE;
 				return;
 			}
 			$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $args[0], $args[1], $data->{level});
-			$BotIrc::heap->{ttr_cache}{$args[0]} = $args[1];
+			$BotIrc::heap{ttr_cache}{$args[0]} = $args[1];
 			BotCtl::send($client, "ok");
 		},
 		trigger_revert => sub {
@@ -80,7 +80,7 @@ use POE;
 				return;
 			}
 			$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $res->{trigger}, $res->{exp}, $data->{level});
-			$BotIrc::heap->{ttr_cache}{$res->{trigger}} = $res->{exp};
+			$BotIrc::heap{ttr_cache}{$res->{trigger}} = $res->{exp};
 			BotCtl::send($client, "ok");
 		}
 	},
@@ -117,10 +117,10 @@ use POE;
 				return 1 if (!BotIrc::public_check_priv($source, 'trigger_delete', $auth));
 				$BotDb::db->do("DELETE FROM tt_trigger_contents WHERE trigger=?", {}, $trigger);
 				$BotDb::db->do("DELETE FROM tt_triggers WHERE trigger=?", {}, $trigger);
-				$BotIrc::heap->{ttr_cache}{$trigger} = undef;
+				$BotIrc::heap{ttr_cache}{$trigger} = undef;
 			} else {
 				$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $trigger, $exp, $source);
-				$BotIrc::heap->{ttr_cache}{$trigger} = $exp;
+				$BotIrc::heap{ttr_cache}{$trigger} = $exp;
 			}
 			BotIrc::msg_or_notice($rpath => "$source: okay.");
 		}
@@ -130,7 +130,7 @@ use POE;
 		return 0 if ($_[ARG2] !~ /(?:^|\s)!([a-z_-]+)/i);
 		my $exp;
 
-		$exp = $_[HEAP]->{ttr_cache}{$1};
+		$exp = $BotIrc::heap{ttr_cache}{$1};
 		return 0 if !defined $exp;
 		my $recp = "";
 		if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/) {

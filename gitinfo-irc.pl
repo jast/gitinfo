@@ -23,7 +23,8 @@ use plugin;
 our $config;
 our $config_file = 'config.json';
 	$config_file = $ARGV[0] if (defined($ARGV[0]) && -f $ARGV[0]);
-our ($kernel, $heap);
+our $kernel;
+our %heap;
 
 my %handlers = ();
 
@@ -77,14 +78,11 @@ our $session = POE::Session->create(
 	},
 	heap => {
 		irc => $irc,
-		ctl_sessions => {},
-		userinfo => {},
 	},
 );
 
 sub main_start {
 	$kernel = $_[KERNEL];
-	$heap = $_[HEAP];
 	$irc->plugin_add('AutoJoin', POE::Component::IRC::Plugin::AutoJoin->new(Channels => {$config->{channel} => undef}));
 	$irc->plugin_add('Connector', POE::Component::IRC::Plugin::Connector->new());
 	$irc->plugin_add('NickServID', POE::Component::IRC::Plugin::NickServID->new(Password => $config->{nick_pwd})) if defined $config->{nick_pwd};
