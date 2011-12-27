@@ -34,6 +34,53 @@ use POE;
 			my $res = $BotDb::db->selectall_arrayref("SELECT tc_id, exp, changed_by, changed_at FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1 AND trigger=? ORDER BY changed_at DESC", {Slice => {}}, $args[0]);
 			BotCtl::send($client, "ok", to_json($res, {utf8 => 1, canonical => 1}));
 		},
+		trigger_edit => sub {
+			my ($client, $data, @args) = @_;
+			if (BotDb::has_priv($data->{level}, 'no_trigger_edit')) {
+				BotCtl::send($client, "denied");
+				return;
+			}
+			my $res = $BotDb::db->selectrow_hashref("SELECT * FROM tt_triggers WHERE trigger=?", {}, $args[0]);
+			if (!defined $res) {
+				if (defined $BotDb::db->err) {
+					BotCtl::send($client, "error", "db_error", $BotDb::db->errstr);
+					BotIrc::error("text_trigger: fetching trigger info for $args[0]: $BotDb::db->errstr");
+				return;
+				}
+				BotCtl::send($client, "doesntexist");
+				return;
+			}
+			if ($res->{lock} && !BotDb::has_priv($data->{level}, 'trigger_edit_locked')) {
+				BotCtl::send($client, "locked");
+				return;
+			}
+			$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $args[0], $args[1], $data->{level});
+			$BotIrc::heap->{ttr_cache}{$args[0]} = $args[1];
+			BotCtl::send($client, "ok");
+		},
+		trigger_revert => sub {
+			my ($client, $data, @args) = @_;
+			if (BotDb::has_priv($data->{level}, 'no_trigger_edit')) {
+				BotCtl::send($client, "denied");
+			}
+			my $res = $BotDb::db->selectrow_hashref("SELECT * FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE tc_id=?", {}, $args[0]);
+			if (!defined $res) {
+				if (defined $BotDb::db->err) {
+					BotCtl::send($client, "error", "db_error", $BotDb::db->errstr);
+					BotIrc::error("text_trigger: fetching trigger info for $args[0]: $BotDb::db->errstr");
+				return;
+				}
+				BotCtl::send($client, "doesntexist");
+				return;
+			}
+			if ($res->{lock} && !BotDb::has_priv($data->{level}, 'trigger_edit_locked')) {
+				BotCtl::send($client, "locked");
+				return;
+			}
+			$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $res->{trigger}, $res->{exp}, $data->{level});
+			$BotIrc::heap->{ttr_cache}{$res->{trigger}} = $res->{exp};
+			BotCtl::send($client, "ok");
+		}
 	},
 	irc_commands => {
 		trigger_edit => sub {
