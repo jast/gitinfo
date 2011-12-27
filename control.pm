@@ -65,7 +65,13 @@ sub set_level {
 }
 
 sub require_control {
-	return 1 if &is_guest;
+	return 1 if &is_control;
+	$_[0]->put("error:needpriv:Insufficient privileges.");
+	return 0;
+}
+
+sub require_user {
+	return 1 if &is_control || &get_user;
 	$_[0]->put("error:needpriv:Insufficient privileges.");
 	return 0;
 }
