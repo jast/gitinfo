@@ -60,6 +60,10 @@ sub get_user {
 	$u;
 }
 
+sub set_level {
+	$_[0]->{level} = $_[1];
+}
+
 sub require_control {
 	return 1 if &is_guest;
 	$_[0]->put("error:needpriv:Insufficient privileges.");

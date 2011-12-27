@@ -96,10 +96,13 @@ sub is_superadmin($) {
 
 sub has_priv($$) {
 	my ($nick, $priv) = map(lc, @_);
-	if (is_superadmin($nick)) {
+	# !control/!guest: hacks for control connections
+	if (is_superadmin($nick) || $nick eq '!control') {
 		return 0 if ($priv =~ /^no_/);
 		return 1;
 	}
+	return 1 if ($priv =~ /^no_/ && $nick eq '!guest');
+	return 0 if ($nick eq 'guest');
 	return 0 if (!_fetch_privs($nick));
 	return exists($privs{$nick}{$priv});
 }
