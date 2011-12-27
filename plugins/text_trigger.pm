@@ -15,8 +15,9 @@ use POE;
 	},
 	on_load => sub {
 		$BotIrc::heap->{ttr_cache} = {};
-		my $res = $BotDb::db->selectall_arrayref("SELECT trigger, exp FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1", {Slice => {}});
+		my $res = $BotDb::db->selectall_arrayref("SELECT trigger, exp FROM tt_trigger_contents WHERE approved=1 ORDER BY changed_at DESC", {Slice => {}});
 		for (@$res) {
+			next if (exists $BotIrc::heap->{ttr_cache}{$_->{trigger}});
 			$BotIrc::heap->{ttr_cache}{$_->{trigger}} = $_->{exp};
 		}
 	},
