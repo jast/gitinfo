@@ -36,6 +36,7 @@ use POE;
 		},
 		trigger_edit => sub {
 			my ($client, $data, @args) = @_;
+			&BotCtl::require_user or return;
 			if (BotDb::has_priv($data->{level}, 'no_trigger_edit')) {
 				BotCtl::send($client, "denied");
 				return;
@@ -60,6 +61,7 @@ use POE;
 		},
 		trigger_revert => sub {
 			my ($client, $data, @args) = @_;
+			&BotCtl::require_user or return;
 			if (BotDb::has_priv($data->{level}, 'no_trigger_edit')) {
 				BotCtl::send($client, "denied");
 			}
