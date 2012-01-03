@@ -53,7 +53,7 @@ use POE;
 			$info = "please see the FAQ page at";
 		}
 		my $recp = "";
-		if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/) {
+		if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/i) {
 			$recp = "$1: ";
 		}
 		my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});

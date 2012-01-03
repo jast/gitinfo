@@ -133,7 +133,7 @@ use POE;
 		$exp = $BotIrc::heap{ttr_cache}{$1};
 		return 0 if !defined $exp;
 		my $recp = "";
-		if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/) {
+		if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/i) {
 			$recp = "$1: ";
 		}
 		my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});
