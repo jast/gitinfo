@@ -1,5 +1,15 @@
 use JSON;
 use POE;
+my $find_trigger = sub {
+	my $query = shift;
+	my $ttrc = $BotIrc::heap{ttr_cache};
+
+	return ($query, $ttrc->{$query}) if (defined $ttrc->{$query});
+	my @matches = grep(/\Q$query\E/, keys %$ttrc);
+	return undef if (!@matches);
+	@matches = sort { length($a) <=> length($b) } @matches;
+	return ($matches[0], $ttrc->{$matches[0]});
+};
 {
 	schemata => {
 		0 => [
@@ -128,16 +138,18 @@ use POE;
 	irc_on_anymsg => sub {
 		my $rpath = &BotIrc::return_path(@_[ARG0, ARG1]) // return 0;
 		return 0 if ($_[ARG2] !~ /(?:^|\s)!([a-z_-]+)/i);
-		my $exp;
 
-		$exp = $BotIrc::heap{ttr_cache}{$1};
-		return 0 if !defined $exp;
+		my $query = $1;
+		my ($trigger, $exp) = $find_trigger->($query);
+		return 0 if !defined $trigger;
+		my $trigger_exp = "";
+		$trigger_exp = "[!$trigger] " if $trigger ne $query;
 		my $recp = "";
 		if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/i) {
 			$recp = "$1: ";
 		}
 		my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});
-		BotIrc::msg_or_notice($target => "$recp$exp");
+		BotIrc::msg_or_notice($target => "$recp$trigger_exp$exp");
 		return 1;
 	},
 };
