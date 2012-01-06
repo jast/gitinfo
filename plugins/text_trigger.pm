@@ -1,14 +1,17 @@
 use JSON;
 use POE;
+my %cache = ();
 my $find_trigger = sub {
 	my $query = shift;
-	my $ttrc = $BotIrc::heap{ttr_cache};
 
-	return ($query, $ttrc->{$query}) if (defined $ttrc->{$query});
-	my @matches = grep(/\Q$query\E/, keys %$ttrc);
+	return ($query, $cache{$query}) if (defined $cache{$query});
+	my @matches = grep(/\Q$query\E/, keys %cache);
 	return undef if (!@matches);
 	@matches = sort { length($a) <=> length($b) } @matches;
-	return ($matches[0], $ttrc->{$matches[0]});
+	return ($matches[0], $cache{$matches[0]});
+};
+my $cache_entry = sub {
+	$cache{$_[0]} = $_[1];
 };
 {
 	schemata => {
@@ -24,20 +27,16 @@ my $find_trigger = sub {
 		],
 	},
 	on_load => sub {
-		$BotIrc::heap{ttr_cache} = {};
 		my $res = $BotDb::db->selectall_arrayref("SELECT trigger, exp FROM tt_trigger_contents WHERE approved=1 ORDER BY changed_at DESC", {Slice => {}});
 		for (@$res) {
-			next if (exists $BotIrc::heap{ttr_cache}{$_->{trigger}});
-			$BotIrc::heap{ttr_cache}{$_->{trigger}} = $_->{exp};
+			next if (exists $cache{$_->{trigger}});
+			$cache_entry->($_->{trigger}, $_->{exp});
 		}
-	},
-	before_unload => sub {
-		delete $BotIrc::heap{ttr_cache};
 	},
 	control_commands => {
 		trigger_list => sub {
 			my ($client, $data, @args) = @_;
-			BotCtl::send($client, "ok", to_json($BotIrc::heap{ttr_cache}, {utf8 => 1, canonical => 1}));
+			BotCtl::send($client, "ok", to_json(\%cache, {utf8 => 1, canonical => 1}));
 		},
 		trigger_history => sub {
 			my ($client, $data, @args) = @_;
@@ -66,7 +65,7 @@ my $find_trigger = sub {
 				return;
 			}
 			$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $args[0], $args[1], $data->{level});
-			$BotIrc::heap{ttr_cache}{$args[0]} = $args[1];
+			$cache_entry->($args[0], $args[1]);
 			BotCtl::send($client, "ok");
 		},
 		trigger_revert => sub {
@@ -90,7 +89,7 @@ my $find_trigger = sub {
 				return;
 			}
 			$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $res->{trigger}, $res->{exp}, $data->{level});
-			$BotIrc::heap{ttr_cache}{$res->{trigger}} = $res->{exp};
+			$cache_entry->($res->{trigger}, $res->{exp});
 			BotCtl::send($client, "ok");
 		}
 	},
@@ -127,10 +126,10 @@ my $find_trigger = sub {
 				return 1 if (!BotIrc::public_check_priv($source, 'trigger_delete', $auth));
 				$BotDb::db->do("DELETE FROM tt_trigger_contents WHERE trigger=?", {}, $trigger);
 				$BotDb::db->do("DELETE FROM tt_triggers WHERE trigger=?", {}, $trigger);
-				$BotIrc::heap{ttr_cache}{$trigger} = undef;
+				$cache_entry->($trigger, undef);
 			} else {
 				$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $trigger, $exp, $source);
-				$BotIrc::heap{ttr_cache}{$trigger} = $exp;
+				$cache_entry->($trigger, $exp);
 			}
 			BotIrc::msg_or_notice($rpath => "$source: okay.");
 		}
