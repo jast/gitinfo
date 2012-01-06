@@ -141,6 +141,12 @@ my $cache_entry = sub {
 		my $query = $1;
 		my ($trigger, $exp) = $find_trigger->($query);
 		return 0 if !defined $trigger;
+
+		if ($exp =~ /^\@!([a-z_-]+)$/i) {
+			($trigger, $exp) = $find_trigger->($1);
+		}
+		return 0 if !defined $trigger;
+
 		my $trigger_exp = "";
 		$trigger_exp = "[!$trigger] " if $trigger ne $query;
 		my $recp = "";
