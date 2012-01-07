@@ -11,7 +11,11 @@ my $find_trigger = sub {
 	return ($matches[0], $cache{$matches[0]});
 };
 my $cache_entry = sub {
-	$cache{$_[0]} = $_[1];
+	if (!defined $_[1]) {
+		delete $cache{$_[0]};
+	} else {
+		$cache{$_[0]} = $_[1];
+	}
 };
 {
 	schemata => {
