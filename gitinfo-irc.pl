@@ -120,7 +120,7 @@ sub nickonly {
 	return $n;
 }
 
-sub return_path($$) {
+sub return_path {
 	my $source = nickonly(shift);
 	my @targets = @{(shift)};
 	return $source if (grep { lc($config->{nick}) eq lc($_) } @targets);
