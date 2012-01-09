@@ -47,6 +47,11 @@ my $cache_entry = sub {
 			my $res = $BotDb::db->selectall_arrayref("SELECT tc_id, exp, changed_by, changed_at FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1 AND trigger=? ORDER BY changed_at DESC", {Slice => {}}, $args[0]);
 			BotCtl::send($client, "ok", to_json($res, {utf8 => 1, canonical => 1}));
 		},
+		trigger_recentchanges => sub {
+			my ($client, $data, @args) = @_;
+			my $res = $BotDb::db->selectall_arrayref("SELECT trigger, exp, changed_by, changed_at FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1 ORDER BY changed_at DESC LIMIT 20", {Slice => {}});
+			BotCtl::send($client, "ok", to_json($res, {utf8 => 1, canonical => 1}));
+		},
 		trigger_edit => sub {
 			my ($client, $data, @args) = @_;
 			&BotCtl::require_user or return;
