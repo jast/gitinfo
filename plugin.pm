@@ -133,7 +133,8 @@ sub unload($) {
 sub maybe_irc_command($$$$$) {
 	my ($source, $targets, $cmd, $args, $auth) = @_;
 	return 0 if (!exists $irc_commands{$cmd});
-	return $irc_commands{$cmd}($source, $targets, $args, $auth);
+	$irc_commands{$cmd}($source, $targets, $args, $auth);
+	return 1;
 }
 
 sub maybe_ctl_command($$$$) {
