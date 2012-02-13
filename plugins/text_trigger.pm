@@ -145,25 +145,28 @@ my $cache_entry = sub {
 	},
 	irc_on_anymsg => sub {
 		my $rpath = &BotIrc::return_path(@_[ARG0, ARG1]) // return 0;
-		return 0 if ($_[ARG2] !~ /(?:^|\s)!([a-z_-]+)/i);
+		my $matched = 0;
 
-		my $query = $1;
-		my ($trigger, $exp) = $find_trigger->($query);
-		return 0 if !defined $trigger;
+		while ($_[ARG2] =~ /(?:^|\s)!([a-z_-]+)/ig) {
+			my $query = $1;
+			my ($trigger, $exp) = $find_trigger->($query);
+			next if !defined $trigger;
 
-		if ($exp =~ /^\@!([a-z_-]+)$/i) {
-			($trigger, $exp) = $find_trigger->($1);
+			if ($exp =~ /^\@!([a-z_-]+)$/i) {
+				($trigger, $exp) = $find_trigger->($1);
+			}
+			next if !defined $trigger;
+
+			my $trigger_exp = "";
+			$trigger_exp = "[!$trigger] " if $trigger ne $query;
+			my $recp = "";
+			if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/i) {
+				$recp = "$1: ";
+			}
+			my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});
+			BotIrc::msg_or_notice($target => "$recp$trigger_exp$exp");
+			$matched = 1;
 		}
-		return 0 if !defined $trigger;
-
-		my $trigger_exp = "";
-		$trigger_exp = "[!$trigger] " if $trigger ne $query;
-		my $recp = "";
-		if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/i) {
-			$recp = "$1: ";
-		}
-		my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});
-		BotIrc::msg_or_notice($target => "$recp$trigger_exp$exp");
-		return 1;
+		return $matched;
 	},
 };
