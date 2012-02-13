@@ -102,7 +102,7 @@ sub has_priv($$) {
 		return 1;
 	}
 	return 1 if ($priv =~ /^no_/ && $nick eq '!guest');
-	return 0 if ($nick eq 'guest');
+	return 0 if ($nick eq '!guest');
 	return 0 if (!_fetch_privs($nick));
 	return exists($privs{$nick}{$priv});
 }
