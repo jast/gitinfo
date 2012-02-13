@@ -83,7 +83,13 @@ our $session = POE::Session->create(
 
 sub main_start {
 	$kernel = $_[KERNEL];
-	$irc->plugin_add('AutoJoin', POE::Component::IRC::Plugin::AutoJoin->new(Channels => {$config->{channel} => undef}));
+	if (ref($config->{channel}) eq '') {
+		$config->{channel} = [$config->{channel}];
+	}
+	my %chans;
+	$chans{lc $_} = undef for @{$config->{channel}};
+	$config->{channel} = \%chans;
+	$irc->plugin_add('AutoJoin', POE::Component::IRC::Plugin::AutoJoin->new(Channels => \%chans));
 	$irc->plugin_add('Connector', POE::Component::IRC::Plugin::Connector->new());
 	$irc->plugin_add('NickServID', POE::Component::IRC::Plugin::NickServID->new(Password => $config->{nick_pwd})) if defined $config->{nick_pwd};
 	add_handler('irc_socketerr', 'core', sub {
@@ -124,8 +130,10 @@ sub return_path {
 	my $source = nickonly(shift);
 	my @targets = @{(shift)};
 	return $source if (grep { lc($config->{nick}) eq lc($_) } @targets);
-	return $config->{channel} if (grep { lc($config->{channel}) eq lc($_) } @targets);
-	return undef;
+	my @chan_targets = grep { exists($config->{channel}{lc $_}) } @targets;
+	return undef unless @chan_targets;
+	# Just ignore additional channels, if any
+	return $chan_targets[0];
 }
 
 sub msg_or_notice($$) {

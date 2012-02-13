@@ -3,7 +3,7 @@
 	"altnick_prefix":	"gitinfo_",		// temp nick used when primary nick is taken
 	"altnick_length":	3,			// length of temp nick suffix
 	"nick_pwd":		"hackme",		// for identifying with nickserv (required)
-	"channel":		"#git",			// channel to join after things have been initialized
+	"channel":		"#git",			// channel(s) to join after things have been initialized; may be an array
 	"username":		"gitinfo",
 	"realname":		"#git info bot, run by jast",
 	"local_addr":		"",			// optional
