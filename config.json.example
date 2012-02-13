@@ -24,5 +24,7 @@
 	"http_sessionpurge":	3600,			// after which time to forget that a web session existed at all
 
 	"autoload_plugins":	[],
-	"hardcore_ignore":	false			// completely ignore people who have the no_react priv
+	"hardcore_ignore":	false,			// completely ignore people who have the no_react priv
+
+	"voice_channel":	"#git"			// channel which the "voice" command targets (required if the voice plugin is used)
 }
