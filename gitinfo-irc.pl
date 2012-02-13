@@ -2,6 +2,7 @@
 package BotIrc;
 
 use common::sense;
+use Carp;
 use JSON;
 use File::Slurp;
 use POE;
@@ -27,6 +28,7 @@ our $kernel;
 our %heap;
 
 my %handlers = ();
+my %handler_ctx = ();
 
 sub read_config {
 	$config = read_file($config_file) or fatal("Config file `$config_file' missing: $!");
@@ -168,6 +170,192 @@ sub noisy_command_authed($$$) {
 	return $authed;
 }
 
+# Convenience methods for handlers {{{
+
+# Called by core stuff that calls handlers; initializes the handler ctx with
+# information about which return paths are available in principle. This will
+# later be matched against what kinds of return paths a handler requires and
+# generate errors if necessary.
+sub prepare_ctx_targets($$$$) {
+	my ($source, $target, $msg, $authed) = @_;
+	my $rpath = return_path($source, $target);
+	$rpath = undef if lc($rpath) eq lc($source);
+	%handler_ctx = (
+		user => $source,
+		channel => $rpath,
+		line => $msg,
+		authed => $authed,
+		no_setup => 1,
+	);
+}
+
+# This is the counterpart to prepare_irc_targets. It's called by handlers to
+# perform priv/target checks according to the handler's specs.
+# Yay function name overload!
+sub check_ctx(%) {
+	my %cfg = shift;
+	my $authed = $handler_ctx{authed};
+	my $source = $handler_ctx{user};
+	my $channel = $handler_ctx{channel};
+	my $account = $authed ? $source : '!guest';
+
+	if (!%handler_ctx) {
+		carp("Trying to use uninitialized handler ctx");
+		return 0;
+	}
+
+	# First, determine where to send replies to...
+	# ... but reuse established values if this isn't the first invocation
+	# in the current run of the handler
+	my ($noise_prefer_channel, $wisdom_prefer_channel);
+	if ($handler_ctx{no_setup}) {
+		$noise_prefer_channel = $cfg{noise_public} // $config->{replies_public};
+		$wisdom_prefer_channel = $cfg{wisdom_public} // 1;
+	} else {
+		$noise_prefer_channel = $cfg{noise_public} // ($handler_ctx{noise_target} eq $channel);
+		$wisdom_prefer_channel = $cfg{wisdom_public} // ($handler_ctx{wisdom_target} eq $channel);
+	}
+	if ($noise_prefer_channel && $channel) {
+		$handler_ctx{noise_type} = 'privmsg';
+		$handler_ctx{noise_target} = $channel;
+	} else {
+		$handler_ctx{noise_type} = 'notice';
+		$handler_ctx{noise_target} = $source;
+	}
+	if ($wisdom_prefer_channel && $channel) {
+		$handler_ctx{wisdom_type} = 'privmsg';
+		$handler_ctx{wisdom_target} = $channel;
+	} else {
+		$handler_ctx{wisdom_type} = 'notice';
+		$handler_ctx{wisdom_target} = $source;
+	}
+	if (exists $cfg{wisdom_addressee}) {
+		ctx_set_addressee($cfg{wisdom_addressee});
+	} else {
+		# We can do this by default without clashing with commands
+		# because both only match at the start of the line and a
+		# command isn't a valid nickname nor vice versa
+		ctx_set_addressee('!auto');
+	}
+	# Don't auto-redirect by default since it might clash with command
+	# syntax
+	ctx_auto_redirect($handler_ctx{wisdom_auto_redirect} // 0);
+	delete $handler_ctx{no_setup};
+
+	if (($cfg{authed} || defined($cfg{priv})) && !$handler_ctx{authed}) {
+		send_noise("You must be logged into NickServ in order to use this command.");
+		return 0;
+	}
+	if (defined $cfg{priv}) {
+		$cfg{priv} = [$cfg{priv}] if ref($cfg{priv}) eq '';
+		for (@{$cfg{priv}}) {
+			if (!BotDb::has_priv($account, $_)) {
+				send_noise("You are not authorised to perform this action ($_).");
+				return 0;
+			}
+		}
+	}
+	if (defined $cfg{antipriv}) {
+		$cfg{antipriv} = [$cfg{antipriv}] if ref($cfg{antipriv}) eq '';
+		for (@{$cfg{antipriv}}) {
+			if (BotDb::has_priv($account, $_)) {
+				send_noise("You are not authorised to perform this action (due to $_).");
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+# There are two types of messages sent from handlers: noise and wisdom. Noise
+# is stuff like "command successful" or "you lack privileges". Wisdom is stuff
+# like "here's the data you requested".
+
+sub send_noise($) {
+	my $noise = shift;
+	if (!%handler_ctx) {
+		carp("A handler tried to send this noise without valid ctx: $noise");
+		return;
+	}
+	if ($handler_ctx{no_setup}) {
+		carp("Handler sending noise without ctx constraints: $noise -> $handler_ctx{source}");
+	}
+	# In channels, address user
+	$noise = "$handler_ctx{user}: $noise" if ($handler_ctx{noise_type} eq 'privmsg');
+
+	$irc->yield($handler_ctx{noise_type} => $handler_ctx{noise_target} => $noise);
+}
+
+sub send_wisdom($%) {
+	my ($wisdom, %cfg) = @_;
+	if (!%handler_ctx) {
+		carp("A handler tried to send this wisdom without valid ctx: $wisdom");
+		return;
+	}
+	if ($handler_ctx{no_setup}) {
+		carp("Handler sending wisdom without ctx constraints: $wisdom -> $handler_ctx{source}");
+	}
+	my $a = $handler_ctx{wisdom_addressee};
+	my $address = "";
+	$address = "$a: " if (defined $a && ctx_target_has_member($a));
+	$irc->yield($handler_ctx{wisdom_type} => $handler_ctx{wisdom_target} => ($address.$wisdom));
+}
+
+# Choose who to address in public wisdom. Set to undef to disable or '!auto'
+# to enable black magic.
+# Note that this is handled during check_ctx, too, and defaults to black magic
+# there.
+sub ctx_set_addressee($) {
+	my $a = shift;
+	if ($a eq '!auto') {
+		$a = undef;
+		if ($handler_ctx{line} && $handler_ctx{line} =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/i) {
+			$a = $1;
+		}
+	}
+	$handler_ctx{wisdom_addressee} = $a;
+}
+
+sub ctx_target($) {
+	return $handler_ctx{shift."_target"};
+}
+
+sub ctx_source() {
+	return $handler_ctx{user};
+}
+
+# This works for wisdom only! Noise should only go to the actual source of a
+# message, really.
+sub ctx_target_has_member($) {
+	my $target = $handler_ctx{wisdom_target};
+	return 0 if $target !~ /^#/;
+	return $irc->is_channel_member($target, shift);
+}
+
+sub ctx_redirect_to_channel($$) {
+	my ($type, $channel) = @_;
+	if (exists($config->{channel}{lc $channel})) {
+		$handler_ctx{"${type}_target"} = $channel;
+		$handler_ctx{"${type}_type"} = 'privmsg';
+	}
+}
+
+# Will redirect wisdom caused by private requests into a channel if the
+# request contains "to:#thechannel" and #thechannel is known to us.
+sub ctx_auto_redirect() {
+	if ($handler_ctx{line} && !ctx_can_target_channel() && $handler_ctx{line} =~ /\bto:(#[\S]+)/) {
+		ctx_redirect_to_channel('wisdom', $1);
+	}
+}
+
+# Was the original message addressed to a known channel?
+# This ignores redirections.
+sub ctx_can_target_channel() {
+	return defined($handler_ctx{channel});
+}
+
+# }}}
+
 sub on_irc_public {
 	my $nick = nickonly($_[ARG0]);
 	return 1 if ($config->{hardcore_ignore} && BotDb::has_priv($nick, 'no_react'));
@@ -193,7 +381,15 @@ sub add_handler($$$) {
 		$handlers{$ev} = [];
 		$kernel->state($ev, sub {
 			for (@{$handlers{$ev}}) {
+				# Prepare handler ctx
+				my ($authed, $msg) = (0, "");
+				if ($ev =~ /^irc_(?:msg|public)$/) {
+					$authed = $_[ARG3];
+					$msg = $_[ARG2];
+				}
+				prepare_ctx_targets(nickonly($_[ARG0]), $_[ARG1], $msg, $authed);
 				my $res = $_->{code}(@_);
+				%handler_ctx = ();
 				last if ($res);
 			}
 		});

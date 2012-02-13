@@ -4,6 +4,7 @@
 	"altnick_length":	3,			// length of temp nick suffix
 	"nick_pwd":		"hackme",		// for identifying with nickserv (required)
 	"channel":		"#git",			// channel(s) to join after things have been initialized; may be an array
+	"replies_public":	true,			// optional; echo command status to channel it was performed in?
 	"username":		"gitinfo",
 	"realname":		"#git info bot, run by jast",
 	"local_addr":		"",			// optional
