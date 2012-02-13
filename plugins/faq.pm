@@ -1,20 +1,21 @@
 use POE;
+my $faq_cacheupdate = sub {
+	return 1 if defined $BotIrc::heap{faq_cache};
+	my $error = shift || sub {};
+	my $faq = BotIrc::read_file($BotIrc::config->{faq_cachefile}) or do {
+		BotIrc::error("FAQ cache broken: $!");
+		$error->("FAQ cache is broken. The bot owner has been notified.");
+		return 0;
+	};
+	while ($faq =~ /<span id="([a-z-]+)" title="(.*?)">/g) {
+		$BotIrc::heap{faq_cache}{$1} = $2;
+	}
+	return 1;
+};
+
 {
 	on_load => sub {
 		$BotIrc::heap{faq_cache} = undef;
-		$BotIrc::heap{faq_cacheupdate} = sub {
-			return 1 if defined $BotIrc::heap{faq_cache};
-			my $error = shift || sub {};
-			my $faq = BotIrc::read_file($BotIrc::config->{faq_cachefile}) or do {
-				BotIrc::error("FAQ cache broken: $!");
-				$error->("FAQ cache is broken. The bot owner has been notified.");
-				return 0;
-			};
-			while ($faq =~ /<span id="([a-z-]+)" title="(.*?)">/g) {
-				$BotIrc::heap{faq_cache}{$1} = $2;
-			}
-			return 1;
-		};
 	},
 	before_unload => sub {
 		delete $BotIrc::heap{faq_cache};
@@ -22,7 +23,7 @@ use POE;
 	control_commands => {
 		faq_list => sub {
 			my ($client, $data, @args) = @_;
-			$BotIrc::heap{faq_cacheupdate}(sub { send($client, "error", "faqcache_broken", $_); }) or return;
+			$faq_cacheupdate->(sub { send($client, "error", "faqcache_broken", $_); }) or return;
 			BotCtl::send($client, "ok", to_json($BotIrc::heap{faq_cache}, {utf8 => 1, canonical => 1}));
 		},
 	},
@@ -42,7 +43,7 @@ use POE;
 		my $page = $1;
 		BotIrc::check_ctx(wisdom_auto_redirect => 1) or return 0;
 
-		$BotIrc::heap{faq_cacheupdate}(sub { BotIrc::msg_or_notice($rpath => "$nick: ".$_); }) or return 1;
+		$faq_cacheupdate->(\&BotIrc::send_noise) or return 1;
 		return 1 if (!exists $BotIrc::heap{faq_cache}{$page});
 
 		my $info = $BotIrc::heap{faq_cache}{$page};
