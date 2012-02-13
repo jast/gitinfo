@@ -33,6 +33,13 @@ my %handler_ctx = ();
 sub read_config {
 	$config = read_file($config_file) or fatal("Config file `$config_file' missing: $!");
 	$config = decode_json($config);
+
+	if (ref($config->{channel}) eq '') {
+		$config->{channel} = [$config->{channel}];
+	}
+	my %chans;
+	$chans{lc $_} = undef for @{$config->{channel}};
+	$config->{channel} = \%chans;
 }
 read_config();
 
@@ -85,13 +92,7 @@ our $session = POE::Session->create(
 
 sub main_start {
 	$kernel = $_[KERNEL];
-	if (ref($config->{channel}) eq '') {
-		$config->{channel} = [$config->{channel}];
-	}
-	my %chans;
-	$chans{lc $_} = undef for @{$config->{channel}};
-	$config->{channel} = \%chans;
-	$irc->plugin_add('AutoJoin', POE::Component::IRC::Plugin::AutoJoin->new(Channels => \%chans));
+	$irc->plugin_add('AutoJoin', POE::Component::IRC::Plugin::AutoJoin->new(Channels => $config->{channel}));
 	$irc->plugin_add('Connector', POE::Component::IRC::Plugin::Connector->new());
 	$irc->plugin_add('NickServID', POE::Component::IRC::Plugin::NickServID->new(Password => $config->{nick_pwd})) if defined $config->{nick_pwd};
 	add_handler('irc_socketerr', 'core', sub {
