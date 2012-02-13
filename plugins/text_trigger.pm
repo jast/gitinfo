@@ -1,3 +1,4 @@
+use Encode;
 use JSON;
 use POE;
 my %cache = ();
@@ -16,6 +17,10 @@ my $cache_entry = sub {
 	} else {
 		$cache{$_[0]} = $_[1];
 	}
+};
+# Ugly recoding hack to work around double encoding somehow caused by Perl+JSON
+my $json_encode = sub {
+	encode('iso-8859-1', to_json(shift, {canonical => 1}));
 };
 {
 	schemata => {
@@ -40,17 +45,17 @@ my $cache_entry = sub {
 	control_commands => {
 		trigger_list => sub {
 			my ($client, $data, @args) = @_;
-			BotCtl::send($client, "ok", to_json(\%cache, {utf8 => 1, canonical => 1}));
+			BotCtl::send($client, "ok", $json_encode->(\%cache));
 		},
 		trigger_history => sub {
 			my ($client, $data, @args) = @_;
 			my $res = $BotDb::db->selectall_arrayref("SELECT tc_id, exp, changed_by, changed_at FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1 AND trigger=? ORDER BY changed_at DESC", {Slice => {}}, $args[0]);
-			BotCtl::send($client, "ok", to_json($res, {utf8 => 1, canonical => 1}));
+			BotCtl::send($client, "ok", $json_encode->($res));
 		},
 		trigger_recentchanges => sub {
 			my ($client, $data, @args) = @_;
 			my $res = $BotDb::db->selectall_arrayref("SELECT trigger, exp, changed_by, changed_at FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1 ORDER BY changed_at DESC LIMIT 20", {Slice => {}});
-			BotCtl::send($client, "ok", to_json($res, {utf8 => 1, canonical => 1}));
+			BotCtl::send($client, "ok", $json_encode->($res));
 		},
 		trigger_edit => sub {
 			my ($client, $data, @args) = @_;

@@ -1,3 +1,5 @@
+use Encode;
+use JSON;
 use POE;
 my $faq_cacheupdate = sub {
 	return 1 if defined $BotIrc::heap{faq_cache};
@@ -24,7 +26,8 @@ my $faq_cacheupdate = sub {
 		faq_list => sub {
 			my ($client, $data, @args) = @_;
 			$faq_cacheupdate->(sub { send($client, "error", "faqcache_broken", $_); }) or return;
-			BotCtl::send($client, "ok", to_json($BotIrc::heap{faq_cache}, {utf8 => 1, canonical => 1}));
+			# Hack to get rid of spurious double encoding
+			BotCtl::send($client, "ok", encode('iso-8859-1', to_json($BotIrc::heap{faq_cache}, {canonical => 1})));
 		},
 	},
 	irc_commands => {
