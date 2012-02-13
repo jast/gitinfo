@@ -117,7 +117,7 @@ my $cache_entry = sub {
 				BotIrc::msg_or_notice($rpath => "$source: valid trigger names must consist of [a-zA-Z_-]");
 				return 1;
 			}
-			return 1 if !BotIrc::noisy_check_antipriv($rpath, $source, 'no_trigger_edit');
+			return 1 if !BotIrc::noisy_check_antipriv($rpath, $source, 'no_trigger_edit', $auth);
 			my $res = $BotDb::db->selectrow_hashref("SELECT * FROM tt_triggers WHERE trigger=?", {}, $trigger);
 			if (!defined $res) {
 				if (defined $BotDb::db->err) {

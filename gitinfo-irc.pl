@@ -151,9 +151,10 @@ sub noisy_check_priv($$$$) {
 	}
 	return 1;
 }
-sub noisy_check_antipriv($$$) {
-	my ($rpath, $nick, $priv) = @_;
-	if (BotDb::has_priv($nick, $priv)) {
+sub noisy_check_antipriv($$$$) {
+	my ($rpath, $nick, $priv, $authed) = @_;
+	my $account = $authed ? $nick : '!guest';
+	if (BotDb::has_priv($account, $priv)) {
 		$irc->yield(privmsg => $rpath, "$nick: you are not authorised to perform this action (due to $priv).");
 		return 0;
 	}
