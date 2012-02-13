@@ -134,27 +134,27 @@ sub msg_or_notice($$) {
 	$irc->yield($method => $target => $msg);
 }
 
-sub public_check_priv($$$) {
-	my ($nick, $priv, $authed) = @_;
-	return 0 if (!public_command_authed($nick, $authed));
+sub noisy_check_priv($$$$) {
+	my ($rpath, $nick, $priv, $authed) = @_;
+	return 0 if (!noisy_command_authed($rpath, $nick, $authed));
 	if (!BotDb::has_priv($nick, $priv)) {
-		$irc->yield(privmsg => $config->{channel}, "$nick: you are not authorised to perform this action ($priv).");
+		$irc->yield(privmsg => $rpath, "$nick: you are not authorised to perform this action ($priv).");
 		return 0;
 	}
 	return 1;
 }
-sub public_check_antipriv($$) {
-	my ($nick, $priv) = @_;
+sub noisy_check_antipriv($$$) {
+	my ($rpath, $nick, $priv) = @_;
 	if (BotDb::has_priv($nick, $priv)) {
-		$irc->yield(privmsg => $config->{channel}, "$nick: you are not authorised to perform this action (due to $priv).");
+		$irc->yield(privmsg => $rpath, "$nick: you are not authorised to perform this action (due to $priv).");
 		return 0;
 	}
 	return 1;
 }
-sub public_command_authed($$) {
-	my ($nick, $authed) = @_;
+sub noisy_command_authed($$$) {
+	my ($rpath, $nick, $authed) = @_;
 	if (!$authed) {
-		$irc->yield(privmsg => $config->{channel}, "$nick: you must be logged in to use this command.");
+		$irc->yield(privmsg => $rpath, "$nick: you must be logged in to use this command.");
 	}
 	return $authed;
 }

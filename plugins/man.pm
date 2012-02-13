@@ -10,7 +10,7 @@ use POE;
 		man_update => sub {
 			my ($source, $targets, $args, $auth) = @_;
 			my $rpath = &BotIrc::return_path(@_) // return 0;
-			return 1 if !BotIrc::public_command_authed($source, $auth);
+			return 1 if !BotIrc::noisy_command_authed($rpath, $source, $auth);
 
 			umask(0022);
 			system("cd $BotIrc::config->{man_repodir} && git pull -q &");

@@ -46,7 +46,7 @@ use Digest::SHA1 qw(sha1_hex);
 	irc_commands => {
 		weblogin => sub {
 			my ($source, $targets, $args, $auth) = @_;
-			return 1 if !BotIrc::public_command_authed($source, $auth);
+			return 1 if !BotIrc::noisy_command_authed($source, $source, $auth);
 
 			# evil!
 			my $auth = sha1_hex("$source:$$:".int(rand(1_000_000)).":".time());

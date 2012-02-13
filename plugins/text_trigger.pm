@@ -106,7 +106,7 @@ my $cache_entry = sub {
 		trigger_edit => sub {
 			my ($source, $targets, $args, $auth) = @_;
 			my $rpath = &BotIrc::return_path(@_) // return 0;
-			return 1 if !BotIrc::public_command_authed($source, $auth);
+			return 1 if !BotIrc::noisy_command_authed($rpath, $source, $auth);
 
 			my ($trigger, $exp) = split(/\s+/, $args, 2);
 			if (!$trigger || !$exp) {
@@ -117,7 +117,7 @@ my $cache_entry = sub {
 				BotIrc::msg_or_notice($rpath => "$source: valid trigger names must consist of [a-zA-Z_-]");
 				return 1;
 			}
-			return 1 if !BotIrc::public_check_antipriv($source, 'no_trigger_edit');
+			return 1 if !BotIrc::noisy_check_antipriv($rpath, $source, 'no_trigger_edit');
 			my $res = $BotDb::db->selectrow_hashref("SELECT * FROM tt_triggers WHERE trigger=?", {}, $trigger);
 			if (!defined $res) {
 				if (defined $BotDb::db->err) {
@@ -126,13 +126,13 @@ my $cache_entry = sub {
 					return 1;
 				}
 				# New trigger!
-				return 1 if !BotIrc::public_check_priv($source, 'trigger_add', $auth);
+				return 1 if !BotIrc::noisy_check_priv($rpath, $source, 'trigger_add', $auth);
 				$BotDb::db->do("INSERT INTO tt_triggers (trigger) VALUES(?)", {}, $trigger);
 			}
-			return 1 if ($res->{lock} && !BotIrc::public_check_priv($source, 'trigger_edit_locked', $auth));
+			return 1 if ($res->{lock} && !BotIrc::noisy_check_priv($rpath, $source, 'trigger_edit_locked', $auth));
 
 			if ($exp eq '-') {
-				return 1 if (!BotIrc::public_check_priv($source, 'trigger_delete', $auth));
+				return 1 if (!BotIrc::noisy_check_priv($rpath, $source, 'trigger_delete', $auth));
 				$BotDb::db->do("DELETE FROM tt_trigger_contents WHERE trigger=?", {}, $trigger);
 				$BotDb::db->do("DELETE FROM tt_triggers WHERE trigger=?", {}, $trigger);
 				$cache_entry->($trigger, undef);

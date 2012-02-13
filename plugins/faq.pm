@@ -30,7 +30,7 @@ use POE;
 		faq_update => sub {
 			my ($source, $targets, $args, $auth) = @_;
 			my $rpath = &BotIrc::return_path(@_) // return 0;
-			return 1 if !BotIrc::public_command_authed($source, $auth);
+			return 1 if !BotIrc::noisy_command_authed($rpath, $source, $auth);
 
 			system("wget --no-check-certificate -q -O '$BotIrc::config->{faq_cachefile}' '$BotIrc::config->{faq_geturl}' &");
 			BotIrc::msg_or_notice($rpath => "$source: FAQ is updating. Please allow a few seconds before using again.");

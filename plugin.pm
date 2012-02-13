@@ -10,7 +10,7 @@ sub init {
 	$irc_commands{priv} = sub {
 		my ($source, $targets, $args, $auth) = @_;
 		my $rpath = &BotIrc::return_path(@_) // return 0;
-		return 1 if !BotIrc::public_check_priv($source, 'priv', $auth);
+		return 1 if !BotIrc::noisy_check_priv($rpath, $source, 'priv', $auth);
 		my @args = split(/\s+/, $args, 3);
 		if ($args[0] eq 'add') {
 			for (split(/\s+/, $args[2])) {
@@ -30,7 +30,7 @@ sub init {
 	$irc_commands{plugin} = sub {
 		my ($source, $targets, $args, $auth) = @_;
 		my $rpath = &BotIrc::return_path(@_) // return 0;
-		return 1 if !BotIrc::public_check_priv($source, 'plugin', $auth);
+		return 1 if !BotIrc::noisy_check_priv($rpath, $source, 'plugin', $auth);
 		my @args = split(/\s+/, $args, 3);
 		my $cb = sub { BotIrc::msg_or_notice($rpath => shift) };
 		if ($args[0] eq 'load') {
@@ -48,7 +48,7 @@ sub init {
 	$irc_commands{rehash} = sub {
 		my ($source, $targets, $args, $auth) = @_;
 		my $rpath = &BotIrc::return_path(@_) // return 0;
-		return 1 if !BotIrc::public_check_priv($source, 'rehash', $auth);
+		return 1 if !BotIrc::noisy_check_priv($rpath, $source, 'rehash', $auth);
 
 		BotIrc::read_config();
 		BotIrc::msg_or_notice($rpath => "$source: okay.");
@@ -56,7 +56,7 @@ sub init {
 	$irc_commands{user} = sub {
 		my ($source, $targets, $args, $auth) = @_;
 		my $rpath = &BotIrc::return_path(@_) // return 0;
-		return 1 if !BotIrc::public_check_priv($source, 'user', $auth);
+		return 1 if !BotIrc::noisy_check_priv($rpath, $source, 'user', $auth);
 		my @args = split(/\s+/, $args);
 		if (@args != 2) {
 			BotIrc::msg_or_notice($rpath => "$source: wrong number of args.");
