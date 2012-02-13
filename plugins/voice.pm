@@ -14,7 +14,7 @@ use POE;
 	irc_commands => {
 		voice => sub {
 			my ($source, $targets, $args, $auth) = @_;
-			my $rpath = &BotIrc::return_path // return 0;
+			BotIrc::check_ctx() or return 1;
 			my $nick = BotIrc::nickonly($source);
 
 			$BotIrc::irc->yield(mode => $BotIrc::config->{channel} => "+v" => $source);

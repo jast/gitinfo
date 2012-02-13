@@ -9,8 +9,8 @@ my %irc_commands = ();
 sub init {
 	$irc_commands{priv} = sub {
 		my ($source, $targets, $args, $auth) = @_;
-		my $rpath = &BotIrc::return_path(@_) // return 0;
-		return 1 if !BotIrc::noisy_check_priv($rpath, $source, 'priv', $auth);
+		BotIrc::check_ctx(priv => 'priv') or return;
+
 		my @args = split(/\s+/, $args, 3);
 		if ($args[0] eq 'add') {
 			for (split(/\s+/, $args[2])) {
@@ -21,18 +21,18 @@ sub init {
 				BotDb::del_priv(lc($args[1]), lc($_));
 			}
 		} else {
-			BotIrc::msg_or_notice($rpath => "$source: invalid sub-command.");
+			BotIrc::send_noise("Invalid sub-command.");
 			return 1;
 		}
-		BotIrc::msg_or_notice($rpath => "$source: okay.");
+		BotIrc::send_noise("Okay.");
 		return 1;
 	};
 	$irc_commands{plugin} = sub {
 		my ($source, $targets, $args, $auth) = @_;
-		my $rpath = &BotIrc::return_path(@_) // return 0;
-		return 1 if !BotIrc::noisy_check_priv($rpath, $source, 'plugin', $auth);
+		BotIrc::check_ctx(priv => 'plugin') or return;
+
 		my @args = split(/\s+/, $args, 3);
-		my $cb = sub { BotIrc::msg_or_notice($rpath => shift) };
+		my $cb = sub { BotIrc::send_noise(shift) };
 		if ($args[0] eq 'load') {
 			load($args[1], $cb, $cb);
 		} elsif ($args[0] eq 'unload') {
@@ -41,25 +41,26 @@ sub init {
 			unload($args[1], $cb, $cb);
 			load($args[1], $cb, $cb);
 		} else {
-			BotIrc::msg_or_notice($rpath => "$source: invalid sub-command.");
+			BotIrc::send_noise("Invalid sub-command.");
 			return 1;
 		}
 	};
 	$irc_commands{rehash} = sub {
 		my ($source, $targets, $args, $auth) = @_;
-		my $rpath = &BotIrc::return_path(@_) // return 0;
-		return 1 if !BotIrc::noisy_check_priv($rpath, $source, 'rehash', $auth);
+		BotIrc::check_ctx(priv => 'rehash') or return;
 
+		# TODO: apply changes live as possible
+		# $old_config = $BotIrc::config;
 		BotIrc::read_config();
-		BotIrc::msg_or_notice($rpath => "$source: okay.");
+		BotIrc::send_noise("Okay.");
 	};
 	$irc_commands{user} = sub {
 		my ($source, $targets, $args, $auth) = @_;
-		my $rpath = &BotIrc::return_path(@_) // return 0;
-		return 1 if !BotIrc::noisy_check_priv($rpath, $source, 'user', $auth);
+		BotIrc::check_ctx(priv => 'user') or return;
+
 		my @args = split(/\s+/, $args);
 		if (@args != 2) {
-			BotIrc::msg_or_notice($rpath => "$source: wrong number of args.");
+			BotIrc::send_noise("Wrong number of args.");
 			return 1;
 		}
 		if ($args[0] eq 'add') {
@@ -67,10 +68,10 @@ sub init {
 		} elsif ($args[0] eq 'del') {
 			BotDb::del_user(lc($args[1]));
 		} else {
-			BotIrc::msg_or_notice($rpath => "$source: invalid sub-command.");
+			BotIrc::send_noise("Invalid sub-command.");
 			return 1;
 		}
-		BotIrc::msg_or_notice($rpath => "$source: okay.");
+		BotIrc::send_noise("Okay.");
 		return 1;
 	};
 }

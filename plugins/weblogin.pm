@@ -46,7 +46,7 @@ use Digest::SHA1 qw(sha1_hex);
 	irc_commands => {
 		weblogin => sub {
 			my ($source, $targets, $args, $auth) = @_;
-			return 1 if !BotIrc::noisy_command_authed($source, $source, $auth);
+			BotIrc::check_ctx(authed => 1, wisdom_public => 0) or return;
 
 			# evil!
 			my $auth = sha1_hex("$source:$$:".int(rand(1_000_000)).":".time());
@@ -54,8 +54,7 @@ use Digest::SHA1 qw(sha1_hex);
 				username	=> lc($source),
 				last_used	=> time()
 			};
-			$BotIrc::irc->yield(notice => $source => "$source: please go to $BotIrc::config->{http_loginurl}$auth to log in (session cookies must be allowed).");
-			return 1;
+			BotIrc::send_wisdom("Please go to $BotIrc::config->{http_loginurl}$auth to log in (session cookies must be allowed).");
 		},
 	},
 };

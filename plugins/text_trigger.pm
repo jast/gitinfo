@@ -105,23 +105,22 @@ my $cache_entry = sub {
 	irc_commands => {
 		trigger_edit => sub {
 			my ($source, $targets, $args, $auth) = @_;
-			my $rpath = &BotIrc::return_path(@_) // return 0;
-			return 1 if !BotIrc::noisy_command_authed($rpath, $source, $auth);
+			BotIrc::check_ctx(authed => 1);
 
 			my ($trigger, $exp) = split(/\s+/, $args, 2);
 			if (!$trigger || !$exp) {
-				BotIrc::msg_or_notice($rpath => "$source: syntax: .trigger_edit <name> <contents>");
+				BotIrc::send_noise("Syntax: .trigger_edit <name> <contents>");
 				return 1;
 			}
 			if ($trigger =~ /[^a-z_-]/i) {
-				BotIrc::msg_or_notice($rpath => "$source: valid trigger names must consist of [a-zA-Z_-]");
+				BotIrc::send_noise("Valid trigger names must consist of [a-zA-Z_-]");
 				return 1;
 			}
-			return 1 if !BotIrc::noisy_check_antipriv($rpath, $source, 'no_trigger_edit', $auth);
+			BotIrc::check_ctx(antipriv => 'no_trigger_edit') or return;
 			my $res = $BotDb::db->selectrow_hashref("SELECT * FROM tt_triggers WHERE trigger=?", {}, $trigger);
 			if (!defined $res) {
 				if (defined $BotDb::db->err) {
-					BotIrc::msg_or_notice($rpath => "$source: uh-oh... something went wrong. Maybe this helps: $BotDb::db->errstr");
+					BotIrc::send_noise("Uh-oh... something went wrong. Maybe this helps: $BotDb::db->errstr");
 					BotIrc::error("text_trigger: fetching trigger info for $trigger: $BotDb::db->errstr");
 					return 1;
 				}
@@ -129,10 +128,10 @@ my $cache_entry = sub {
 				return 1 if !BotIrc::noisy_check_priv($rpath, $source, 'trigger_add', $auth);
 				$BotDb::db->do("INSERT INTO tt_triggers (trigger) VALUES(?)", {}, $trigger);
 			}
-			return 1 if ($res->{lock} && !BotIrc::noisy_check_priv($rpath, $source, 'trigger_edit_locked', $auth));
+			BotIrc::check_ctx(priv => 'trigger_edit_locked') or return;
 
 			if ($exp eq '-') {
-				return 1 if (!BotIrc::noisy_check_priv($rpath, $source, 'trigger_delete', $auth));
+				BotIrc::check_ctx(priv => 'trigger_delete') or return;
 				$BotDb::db->do("DELETE FROM tt_trigger_contents WHERE trigger=?", {}, $trigger);
 				$BotDb::db->do("DELETE FROM tt_triggers WHERE trigger=?", {}, $trigger);
 				$cache_entry->($trigger, undef);
@@ -140,11 +139,11 @@ my $cache_entry = sub {
 				$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $trigger, $exp, $source);
 				$cache_entry->($trigger, $exp);
 			}
-			BotIrc::msg_or_notice($rpath => "$source: okay.");
+			BotIrc::send_noise("Okay.");
 		}
 	},
 	irc_on_anymsg => sub {
-		my $rpath = &BotIrc::return_path(@_[ARG0, ARG1]) // return 0;
+		BotIrc::check_ctx(wisdom_auto_redirect => 1) or return 1;
 		my $matched = 0;
 
 		while ($_[ARG2] =~ /(?:^|\s)!([a-z_-]+)/ig) {
@@ -159,12 +158,8 @@ my $cache_entry = sub {
 
 			my $trigger_exp = "";
 			$trigger_exp = "[!$trigger] " if $trigger ne $query;
-			my $recp = "";
-			if ($_[ARG2] =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/i) {
-				$recp = "$1: ";
-			}
-			my $target = ($recp eq '' ? $rpath : $BotIrc::config->{channel});
-			BotIrc::msg_or_notice($target => "$recp$trigger_exp$exp");
+
+			BotIrc::send_wisdom("$trigger_exp$exp");
 			$matched = 1;
 		}
 		return $matched;

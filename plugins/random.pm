@@ -23,25 +23,27 @@ my $cache_items = sub {
 	irc_commands => {
 		random => sub {
 			my ($source, $targets, $args, $auth) = @_;
-			my $rpath = &BotIrc::return_path // return 0;
+			BotIrc::check_ctx() or return;
+
 			if (!$args) {
 				my $i = int(rand(@cache));
-				BotIrc::msg_or_notice($rpath => $cache[$i] ." [". $ids[$i] ."]");
+				BotIrc::send_wisdom($cache[$i] ." [". $ids[$i] ."]");
 				return 1;
 			}
-			return 1 if !BotIrc::public_command_authed($source, $auth);
+			BotIrc::check_ctx(authed => 1) or return;
 			my ($cmd, $data) = split(/\s+/, $args, 2);
 			if ($cmd eq 'add') {
 				$BotDb::db->do("INSERT INTO random_stuff (random, added_by) VALUES(?, ?)", {}, $data, $source);
 				$cache_items->();
-				BotIrc::msg_or_notice($rpath => "$source: okay.");
+				BotIrc::send_noise("Okay.");
 			} elsif ($cmd eq 'rehash') {
 				$cache_items->();
-				BotIrc::msg_or_notice($rpath => "$source: okay.");
+				BotIrc::send_noise("Okay.");
 			} elsif ($cmd eq 'delete') {
-				return 1 if (!BotIrc::public_check_priv($source, 'random_delete', $auth));
+				BotIrc::check_ctx(priv => 'random_delete') or return;
 				$BotDb::db->do("DELETE FROM random_stuff WHERE rowid=?", $data);
 				$cache_items->();
+				BotIrc::send_noise("Okay.");
 			}
 		}
 	},
