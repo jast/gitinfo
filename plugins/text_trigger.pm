@@ -130,7 +130,7 @@ my $json_encode = sub {
 					return 1;
 				}
 				# New trigger!
-				return 1 if !BotIrc::noisy_check_priv($rpath, $source, 'trigger_add', $auth);
+				BotIrc::check_ctx(priv => 'trigger_add') or return;
 				$BotDb::db->do("INSERT INTO tt_triggers (trigger) VALUES(?)", {}, $trigger);
 			}
 			BotIrc::check_ctx(priv => 'trigger_edit_locked') or return;
