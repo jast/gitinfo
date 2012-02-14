@@ -131,7 +131,12 @@ sub nickonly {
 
 sub return_path {
 	my $source = nickonly(shift);
-	my @targets = @{(shift)};
+	my $targets = shift;
+	my @targets = ();
+	if (ref($targets) eq 'ARRAY') {
+		@targets = @$targets;
+	}
+
 	return $source if (grep { lc($config->{nick}) eq lc($_) } @targets);
 	my @chan_targets = grep { exists($config->{channel}{lc $_}) } @targets;
 	return undef unless @chan_targets;
