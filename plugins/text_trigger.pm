@@ -110,7 +110,7 @@ my $json_encode = sub {
 	irc_commands => {
 		trigger_edit => sub {
 			my ($source, $targets, $args, $auth) = @_;
-			BotIrc::check_ctx(authed => 1);
+			BotIrc::check_ctx(authed => 1) or return;
 
 			my ($trigger, $exp) = split(/\s+/, $args, 2);
 			if (!$trigger || !$exp) {
