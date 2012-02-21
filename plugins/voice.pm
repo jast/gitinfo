@@ -1,6 +1,6 @@
 use POE;
 {
-	ctl_commands => {
+	control_commands => {
 		voice => sub {
 			my ($client, $data, @args) = @_;
 			&BotCtl::require_control or return;
