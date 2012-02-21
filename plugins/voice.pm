@@ -3,7 +3,6 @@ use POE;
 	control_commands => {
 		voice => sub {
 			my ($client, $data, @args) = @_;
-			&BotCtl::require_control or return;
 			if (!$BotIrc::irc->is_channel_member($BotIrc::config->{voice_channel}, $args[0])) {
 				$client->put("error:notinchan:That user couldn't be found in the channel.");
 			} else {
