@@ -7,7 +7,7 @@ use POE;
 				$client->put("error:notinchan:That user couldn't be found in the channel.");
 			} else {
 				$BotIrc::irc->yield(mode => $BotIrc::config->{voice_channel} => "+v" => $args[0]);
-				$client->put($client, "ok");
+				$client->put("ok");
 			}
 		},
 	},
