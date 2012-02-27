@@ -315,7 +315,10 @@ sub ctx_set_addressee($) {
 	my $a = shift;
 	if ($a eq '!auto') {
 		$a = undef;
-		if ($handler_ctx{line} && $handler_ctx{line} =~ /^([a-z_\[\]\{\}\\\|][a-z0-9_\[\]\\\|`^{}-]+)[,:]\s+/i) {
+		if ($handler_ctx{line} && $handler_ctx{line} =~ /^
+				([\w\[\]\{\}\\\|`^{}-]+) # nick (broad match)
+				(?:[,:]|\s-+)		 # separator
+				\s+/ix) {
 			$a = $1;
 		}
 	}
