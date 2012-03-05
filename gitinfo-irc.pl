@@ -137,7 +137,7 @@ sub return_path {
 		@targets = @$targets;
 	}
 
-	return $source if (grep { lc($config->{nick}) eq lc($_) } @targets);
+	return $source if (grep { lc($irc->nick_name()) eq lc($_) } @targets);
 	my @chan_targets = grep { exists($config->{channel}{lc $_}) } @targets;
 	return undef unless @chan_targets;
 	# Just ignore additional channels, if any
