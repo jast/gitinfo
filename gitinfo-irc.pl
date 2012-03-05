@@ -325,6 +325,10 @@ sub ctx_set_addressee($) {
 	$handler_ctx{wisdom_addressee} = $a;
 }
 
+sub ctx_addressee() {
+	return $handler_ctx{"wisdom_addressee"};
+}
+
 sub ctx_target($) {
 	return $handler_ctx{shift."_target"};
 }
