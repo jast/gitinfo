@@ -102,7 +102,7 @@ sub load($;$$) {
 		$p->{on_install}($error, $info) if exists $p->{on_install};
 	}
 	if (exists $p->{dependencies}) {
-		for ($p->{dependencies}) {
+		for (@{$p->{dependencies}}) {
 			next if (exists $plugins{$_});
 			$info->("Loading dependency '$_'...");
 			if (!&load($_)) {
@@ -145,7 +145,7 @@ sub unload($) {
 
 sub call($$;@) {
 	my ($name, $func, @params) = @_;
-	croak("Tried to call plugin function in '$name' but isn't loaded") if !exists $plugins{$name})
+	croak("Tried to call plugin function in '$name' but isn't loaded") if !exists $plugins{$name};
 	croak("Tried to call plugin function '$func' in '$name' but isn't defined") if !exists $plugins{$name}{functions}{$func};
 	return $plugins{$name}{functions}{$func}(@params);
 }
