@@ -277,94 +277,109 @@ sub check_ctx(%) {
 # is stuff like "command successful" or "you lack privileges". Wisdom is stuff
 # like "here's the data you requested".
 
-sub send_noise($) {
+sub send_noise($;$) {
+	my $ctx = (ref($_[0]) eq 'HASH') ? shift : \%handler_ctx;
 	my $noise = shift;
-	if (!%handler_ctx) {
+	if (!%$ctx) {
 		carp("A handler tried to send this noise without valid ctx: $noise");
 		return;
 	}
-	if ($handler_ctx{no_setup}) {
-		carp("Handler sending noise without ctx constraints: $noise -> $handler_ctx{source}");
+	if ($ctx->{no_setup}) {
+		carp("Handler sending noise without ctx constraints: $noise -> $ctx->{source}");
 	}
 	# In channels, address user
-	$noise = "$handler_ctx{user}: $noise" if ($handler_ctx{noise_type} eq 'privmsg');
+	$noise = "$ctx->{user}: $noise" if ($ctx->{noise_type} eq 'privmsg');
 
-	$irc->yield($handler_ctx{noise_type} => $handler_ctx{noise_target} => $noise);
+	$irc->yield($ctx->{noise_type} => $ctx->{noise_target} => $noise);
 }
 
-sub send_wisdom($%) {
-	my ($wisdom, %cfg) = @_;
-	if (!%handler_ctx) {
+sub send_wisdom($;$) {
+	my $ctx = (ref($_[0]) eq 'HASH') ? shift : \%handler_ctx;
+	my $wisdom = shift;
+	if (!%$ctx) {
 		carp("A handler tried to send this wisdom without valid ctx: $wisdom");
 		return;
 	}
-	if ($handler_ctx{no_setup}) {
-		carp("Handler sending wisdom without ctx constraints: $wisdom -> $handler_ctx{source}");
+	if ($ctx->{no_setup}) {
+		carp("Handler sending wisdom without ctx constraints: $wisdom -> $ctx->{source}");
 	}
-	my $a = $handler_ctx{wisdom_addressee};
+	my $a = $ctx->{wisdom_addressee};
 	my $address = "";
-	$address = "$a: " if (defined $a && ctx_target_has_member($a));
-	$irc->yield($handler_ctx{wisdom_type} => $handler_ctx{wisdom_target} => ($address.$wisdom));
+	$address = "$a: " if (defined $a && ctx_target_has_member($ctx, $a));
+	$irc->yield($ctx->{wisdom_type} => $ctx->{wisdom_target} => ($address.$wisdom));
 }
 
 # Choose who to address in public wisdom. Set to undef to disable or '!auto'
 # to enable black magic.
 # Note that this is handled during check_ctx, too, and defaults to black magic
 # there.
-sub ctx_set_addressee($) {
+sub ctx_set_addressee($;$) {
+	my $ctx = (ref($_[0]) eq 'HASH') ? shift : \%handler_ctx;
 	my $a = shift;
 	if ($a eq '!auto') {
 		$a = undef;
-		if ($handler_ctx{line} && $handler_ctx{line} =~ /^
+		if ($ctx->{line} && $ctx->{line} =~ /^
 				([\w\[\]\{\}\\\|`^{}-]+) # nick (broad match)
 				(?:[,:]|\s-+)		 # separator
 				\s+/ix) {
 			$a = $1;
 		}
 	}
-	$handler_ctx{wisdom_addressee} = $a;
+	$ctx->{wisdom_addressee} = $a;
 }
 
-sub ctx_addressee() {
-	return $handler_ctx{"wisdom_addressee"};
+sub ctx_addressee(;$) {
+	my $ctx = (ref($_[0]) eq 'HASH') ? shift : \%handler_ctx;
+	return $ctx->{"wisdom_addressee"};
 }
 
-sub ctx_target($) {
-	return $handler_ctx{shift."_target"};
+sub ctx_target($;$) {
+	my $ctx = (ref($_[0]) eq 'HASH') ? shift : \%handler_ctx;
+	return $ctx->{shift."_target"};
 }
 
-sub ctx_source() {
-	return $handler_ctx{user};
+sub ctx_source(;$) {
+	my $ctx = (ref($_[0]) eq 'HASH') ? shift : \%handler_ctx;
+	return $ctx->{user};
 }
 
 # This works for wisdom only! Noise should only go to the actual source of a
 # message, really.
-sub ctx_target_has_member($) {
-	my $target = $handler_ctx{wisdom_target};
+sub ctx_target_has_member($;$) {
+	my $ctx = (ref($_[0]) eq 'HASH') ? shift : \%handler_ctx;
+	my $target = $ctx->{wisdom_target};
 	return 0 if $target !~ /^#/;
 	return $irc->is_channel_member($target, shift);
 }
 
-sub ctx_redirect_to_channel($$) {
+sub ctx_redirect_to_channel($;$$) {
+	my $ctx = (ref($_[0]) eq 'HASH') ? shift : \%handler_ctx;
 	my ($type, $channel) = @_;
 	if (exists($config->{channel}{lc $channel})) {
-		$handler_ctx{"${type}_target"} = $channel;
-		$handler_ctx{"${type}_type"} = 'privmsg';
+		$ctx->{"${type}_target"} = $channel;
+		$ctx->{"${type}_type"} = 'privmsg';
 	}
 }
 
 # Will redirect wisdom caused by private requests into a channel if the
 # request contains "to:#thechannel" and #thechannel is known to us.
-sub ctx_auto_redirect() {
-	if ($handler_ctx{line} && !ctx_can_target_channel() && $handler_ctx{line} =~ /\bto:(#[\S]+)/) {
-		ctx_redirect_to_channel('wisdom', $1);
+sub ctx_auto_redirect(;$) {
+	my $ctx = (ref($_[0]) eq 'HASH') ? shift : \%handler_ctx;
+	if ($ctx->{line} && !ctx_can_target_channel($ctx) && $ctx->{line} =~ /\bto:(#[\S]+)/) {
+		ctx_redirect_to_channel($ctx, 'wisdom', $1);
 	}
 }
 
 # Was the original message addressed to a known channel?
 # This ignores redirections.
-sub ctx_can_target_channel() {
-	return defined($handler_ctx{channel});
+sub ctx_can_target_channel(;$) {
+	my $ctx = (ref($_[0]) eq 'HASH') ? shift : \%handler_ctx;
+	return defined($ctx->{channel});
+}
+
+# Get a copy of the current ctx, for use in async scripts
+sub ctx_frozen() {
+	return \{%handler_ctx};
 }
 
 # }}}
