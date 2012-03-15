@@ -389,7 +389,7 @@ sub ctx_can_target_channel(;$) {
 
 # Get a copy of the current ctx, for use in async scripts
 sub ctx_frozen() {
-	return \{%handler_ctx};
+	return {%handler_ctx};
 }
 
 # }}}
