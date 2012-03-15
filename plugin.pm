@@ -143,6 +143,13 @@ sub unload($) {
 	$info->("Plugin '$name' unloaded.");
 }
 
+sub call($$;@) {
+	my ($name, $func, @params) = @_;
+	croak("Tried to call plugin function in '$name' but isn't loaded") if !exists $plugins{$name})
+	croak("Tried to call plugin function '$func' in '$name' but isn't defined") if !exists $plugins{$name}{functions}{$func};
+	return $plugins{$name}{functions}{$func}(@params);
+}
+
 # Interface used by other parts of the core ############################## {{{
 
 sub maybe_irc_command($$$$$) {
