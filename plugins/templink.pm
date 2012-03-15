@@ -5,14 +5,14 @@ use POSIX;
 
 my %links = ();
 my $id = 1;
-my $chars = '23456789abcdefghjkmnpqrstuvwxyz';
+my $chars = '023456789abcdefghkmnopqrstuvwxyz';
 my $numchars = length($chars);
 
 my $int_to_str = sub {
 	my $i = shift;
 	my $res = '';
 	while ($i > 0) {
-		$res = $chars[$i % $numchars] . $res;
+		$res = substr($chars, $i % $numchars, 1) . $res;
 		$i = POSIX::floor($i/$numchars);
 	}
 	$res;
@@ -23,17 +23,17 @@ my $int_to_str = sub {
 		make => sub {
 			my $tag = $int_to_str->($id++);
 			$links{$tag} = shift;
-			return $tag;
+			return $BotIrc::config->{templink_baseurl} . $tag;
 		},
 	},
 	control_commands => {
 		'templink_get' => sub {
-			my ($client, $data, @args) = shift;
-			if (!exists $links{$tag}) {
+			my ($client, $data, @args) = @_;
+			if (!exists $links{$args[0]}) {
 				$client->put("error:notfound");
 				return;
 			}
-			BotCtl::send($client, "ok", $links{$tag});
+			BotCtl::send($client, "ok", $links{$args[0]});
 		},
 	},
 };
