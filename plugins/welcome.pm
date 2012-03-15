@@ -11,6 +11,8 @@ my %joined_users = ();
 		return 0 if !exists $joined_users{lc $source};
 		delete $joined_users{lc $source};
 		return 0 if $_[ARG2] !~ /^(?:hi|hello)\b/i;
+		# arbitrary threshold; prevent responding to an actual question
+		return 0 if length($_[ARG2]) > 15;
 		my $msg;
 		return 0 if !defined($msg = $BotIrc::config->{welcome_channels}{lc $chan});
 
