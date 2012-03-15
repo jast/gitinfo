@@ -1,7 +1,7 @@
 package BotHttp;
 use Carp;
 use common::sense;
-use HTTP::Request;
+use HTTP::Request::Common;
 use HTTP::Status;
 use POE;
 
