@@ -11,6 +11,7 @@ use POE::Component::IRC::Plugin::AutoJoin;
 use POE::Component::IRC::Plugin::Connector;
 use POE::Component::IRC::Plugin::NickServID;
 use POE::Component::Client::DNS;
+use POE::Component::Client::HTTP;
 use POE::Component::Server::TCP;
 use POE::Filter::Line;
 use Socket;
@@ -65,6 +66,13 @@ our $irc = POE::Component::IRC::State->spawn(
 	'LocalAddr'	=> $config->{local_addr},
 	'useipv6'	=> $config->{ipv6},
 	'Raw'		=> 1,
+);
+
+POE::Component::Client::HTTP->spawn(
+	Alias		=> 'http',
+	Timeout		=> 30,
+	MaxSize		=> 1_000_000,
+	FollowRedirects	=> 2,
 );
 
 if ($config->{control_enabled}) {
