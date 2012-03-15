@@ -101,6 +101,16 @@ sub load($;$$) {
 		$BotDb::db->do("INSERT INTO plugins VALUES(?, 0)", {}, $name);
 		$p->{on_install}($error, $info) if exists $p->{on_install};
 	}
+	if (exists $p->{dependencies}) {
+		for ($p->{dependencies}) {
+			next if (exists $plugins{$_});
+			$info->("Loading dependency '$_'...");
+			if (!&load($_)) {
+				$error->("Aborting load of '$name' due to the above error in dependency '$_'");
+				return undef;
+			}
+		}
+	}
 	if (exists $p->{schemata}) {
 		BotDb::update_schema($name, $p->{schemata}, $error, $info) or return undef;
 	}
