@@ -20,6 +20,7 @@ use Socket6;
 use lib '.';
 use control;
 use db;
+use http;
 use plugin;
 
 our $config;
@@ -100,6 +101,7 @@ our $session = POE::Session->create(
 
 sub main_start {
 	$kernel = $_[KERNEL];
+	BotHttp::init();
 	$irc->plugin_add('AutoJoin', POE::Component::IRC::Plugin::AutoJoin->new(Channels => $config->{channel}));
 	$irc->plugin_add('Connector', POE::Component::IRC::Plugin::Connector->new());
 	$irc->plugin_add('NickServID', POE::Component::IRC::Plugin::NickServID->new(Password => $config->{nick_pwd})) if defined $config->{nick_pwd};
