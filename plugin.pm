@@ -85,6 +85,10 @@ sub load($;$$) {
 		$error->("Can't load plugin 'core': reserved name");
 		return undef;
 	}
+	if (exists $plugins{$name}) {
+		$error->("Plugin '$name' already loaded.");
+		return $plugins{$name};
+	}
 	unless ($p = do "plugins/$name.pm") {
 		$error->("Couldn't parse plugin '$name': $@") if $@;
 		$error->("Couldn't read plugin '$name': $!") if $!;
