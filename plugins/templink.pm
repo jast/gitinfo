@@ -4,7 +4,6 @@
 use POSIX;
 
 my %links = ();
-my $id = 1;
 my $chars = '023456789abcdefghkmnopqrstuvwxyz';
 my $numchars = length($chars);
 
@@ -17,12 +16,30 @@ my $int_to_str = sub {
 	}
 	$res;
 };
+my $str_to_int = sub {
+	my $str = shift;
+	my $i = 0;
+	while (length($str)) {
+		$i = $i * $numchars + index($chars, substr($str, 0, 1));
+		$str = substr($str, 1);
+	}
+	$i;
+};
 
 {
+	schemata => {
+		0 => [
+			"CREATE TABLE templinks (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+				url TEXT NOT NULL)",
+		],
+	},
 	functions => {
 		make => sub {
-			my $tag = $int_to_str->($id++);
-			$links{$tag} = shift;
+			my $url = shift;
+			$BotDb::db->do("INSERT INTO templinks (url) VALUES(?)", {}, $url);
+			my $id = $BotDb::db->last_insert_id(undef, undef, "templinks", "id");
+			my $tag = $int_to_str->($id);
+			$links{$tag} = $url;
 			return $BotIrc::config->{templink_baseurl} . $tag;
 		},
 	},
@@ -30,8 +47,19 @@ my $int_to_str = sub {
 		'templink_get' => sub {
 			my ($client, $data, @args) = @_;
 			if (!exists $links{$args[0]}) {
-				$client->put("error:notfound");
-				return;
+				my $id = $str_to_int->($args[0]);
+				my $res = $BotDb::db->selectrow_hashref(
+					"SELECT url FROM templinks WHERE id = ?", {}, $id);
+				if (!defined $res) {
+					if (defined $BotDb::db->err) {
+						BotCtl::send($client, "error", "db_error", $BotDb::db->errstr);
+						BotIrc::error("templink: fetching link $args[0]=$id: ".$BotDb::db->errstr);
+						return;
+					}
+					$client->put("error:notfound");
+					return;
+				}
+				$links{$args[0]} = $res->{url};
 			}
 			BotCtl::send($client, "ok", $links{$args[0]});
 		},
