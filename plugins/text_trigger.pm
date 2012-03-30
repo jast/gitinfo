@@ -117,8 +117,8 @@ my $json_encode = sub {
 				BotIrc::send_noise("Syntax: .trigger_edit <name> <contents>");
 				return 1;
 			}
-			if ($trigger =~ /[^a-z_-]/i) {
-				BotIrc::send_noise("Valid trigger names must consist of [a-zA-Z_-]");
+			if ($trigger =~ /[^a-z_.-]/i) {
+				BotIrc::send_noise("Valid trigger names must consist of [a-zA-Z_.-]");
 				return 1;
 			}
 			BotIrc::check_ctx(antipriv => 'no_trigger_edit') or return;
@@ -151,12 +151,12 @@ my $json_encode = sub {
 		BotIrc::check_ctx(wisdom_auto_redirect => 1) or return 1;
 		my $matched = 0;
 
-		while ($_[ARG2] =~ /(?:^|\s)!([a-z_-]+)/ig) {
+		while ($_[ARG2] =~ /(?:^|\s)!([a-z_.-]+)/ig) {
 			my $query = $1;
 			my ($trigger, $exp) = $find_trigger->($query);
 			next if !defined $trigger;
 
-			if ($exp =~ /^\@!([a-z_-]+)$/i) {
+			if ($exp =~ /^\@!([a-z_.-]+)$/i) {
 				($trigger, $exp) = $find_trigger->($1);
 			}
 			next if !defined $trigger;
