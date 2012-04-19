@@ -43,19 +43,22 @@ my $faq_cacheupdate = sub {
 	},
 	irc_on_anymsg => sub {
 		return 0 if ($_[ARG2] !~ /\bfaq\s+([a-z-]+)/);
-		my $page = $1;
 		BotIrc::check_ctx(wisdom_auto_redirect => 1) or return 0;
 
 		$faq_cacheupdate->(\&BotIrc::send_noise) or return 1;
-		return 1 if (!exists $BotIrc::heap{faq_cache}{$page});
 
-		my $info = $BotIrc::heap{faq_cache}{$page};
-		if ($info) {
-			$info .= "; more details available at";
-		} else {
-			$info = "please see the FAQ page at";
+		while ($_[ARG2] =~ /\bfaq\s+([a-z-]+)/g) {
+			my $page = $1;
+			next if (!exists $BotIrc::heap{faq_cache}{$page});
+
+			my $info = $BotIrc::heap{faq_cache}{$page};
+			if ($info) {
+				$info .= "; more details available at";
+			} else {
+				$info = "please see the FAQ page at";
+			}
+			BotIrc::send_wisdom("$info $BotIrc::config->{faq_baseurl}#$page");
 		}
-		BotIrc::send_wisdom("$info $BotIrc::config->{faq_baseurl}#$page");
-		return 1;
+		return 0;
 	},
 };

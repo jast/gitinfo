@@ -19,7 +19,6 @@ use POE;
 	},
 	irc_on_anymsg => sub {
 		return 0 if ($_[ARG2] !~ /\bman\s+([a-z-]+)/);
-		my $page = $1;
 		BotIrc::check_ctx(wisdom_auto_redirect => 1) or return;
 
 		if (!defined $BotIrc::heap{man_cache}) {
@@ -34,13 +33,16 @@ use POE;
 				$BotIrc::heap{man_cache}{$_} = undef;
 			}
 		}
-		if ($_[ARG2] =~ /\bman\s+git\s+([a-z-]+)/) {
-			$altpage = "git-$1";
-			$page = $altpage if exists $BotIrc::heap{man_cache}{$altpage};
+		while ($_[ARG2] =~ /\bman\s+(git\s+)?([a-z-]+)?/g) {
+			my $page = $2;
+			if (defined $1) {
+				$altpage = "git-$2";
+				$page = $altpage if exists $BotIrc::heap{man_cache}{$altpage};
+			}
+			next if (!exists $BotIrc::heap{man_cache}{$page});
+			BotIrc::send_wisdom("the $page manpage is available at $BotIrc::config->{man_baseurl}/$page.html");
 		}
-		return 0 if (!exists $BotIrc::heap{man_cache}{$page});
-		BotIrc::send_wisdom("the $page manpage is available at $BotIrc::config->{man_baseurl}/$page.html");
-		return 1;
+		return 0;
 	},
 };
 
