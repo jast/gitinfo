@@ -151,10 +151,18 @@ my $json_encode = sub {
 		BotIrc::check_ctx(wisdom_auto_redirect => 1) or return 1;
 		my $matched = 0;
 
-		while ($_[ARG2] =~ /(?:^|\s)!([a-z_.-]+)/ig) {
+		TRIGGERS: while ($_[ARG2] =~ /(?:^|\s)!([a-z_.-]+)/ig) {
 			my $query = $1;
-			my ($trigger, $exp) = $find_trigger->($query);
-			next if !defined $trigger;
+			my ($trigger, $exp);
+			# This construct keeps removing trailing dots until a
+			# match is found (or no further dots can be removed).
+			# This is done so that punctuation can run into trigger
+			# names without causing problems.
+			while (1) {
+				($trigger, $exp) = $find_trigger->($query);
+				last if (defined $trigger);
+				next TRIGGERS if (!($query =~ s/\.$//));
+			}
 
 			if ($exp =~ /^\@!([a-z_.-]+)$/i) {
 				($trigger, $exp) = $find_trigger->($1);
