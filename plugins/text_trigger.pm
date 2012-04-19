@@ -117,8 +117,8 @@ my $json_encode = sub {
 				BotIrc::send_noise("Syntax: .trigger_edit <name> <contents>");
 				return 1;
 			}
-			if ($trigger =~ /[^a-z_.-]/i) {
-				BotIrc::send_noise("Valid trigger names must consist of [a-zA-Z_.-]");
+			if ($trigger =~ /[^a-z0-9_.-]/i) {
+				BotIrc::send_noise("Valid trigger names must consist of [a-zA-Z0-9_.-]");
 				return 1;
 			}
 			BotIrc::check_ctx(antipriv => 'no_trigger_edit') or return;
@@ -150,7 +150,7 @@ my $json_encode = sub {
 	irc_on_anymsg => sub {
 		BotIrc::check_ctx(wisdom_auto_redirect => 1) or return 1;
 
-		TRIGGERS: while ($_[ARG2] =~ /(?:^|\s)!([a-z_.-]+)/ig) {
+		TRIGGERS: while ($_[ARG2] =~ /(?:^|\s)!([a-z0-9_.-]+)/ig) {
 			my $query = $1;
 			my ($trigger, $exp);
 			# This construct keeps removing trailing dots until a
