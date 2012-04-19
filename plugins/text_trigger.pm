@@ -149,7 +149,6 @@ my $json_encode = sub {
 	},
 	irc_on_anymsg => sub {
 		BotIrc::check_ctx(wisdom_auto_redirect => 1) or return 1;
-		my $matched = 0;
 
 		TRIGGERS: while ($_[ARG2] =~ /(?:^|\s)!([a-z_.-]+)/ig) {
 			my $query = $1;
@@ -173,8 +172,7 @@ my $json_encode = sub {
 			$trigger_exp = "[!$trigger] " if $trigger ne $query;
 
 			BotIrc::send_wisdom("$trigger_exp$exp");
-			$matched = 1;
 		}
-		return $matched;
+		return 0;
 	},
 };
