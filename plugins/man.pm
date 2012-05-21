@@ -37,7 +37,11 @@ use POE;
 			my $page = $2;
 			if (defined $1) {
 				$altpage = "git-$2";
-				$page = $altpage if exists $BotIrc::heap{man_cache}{$altpage};
+				if (exists $BotIrc::heap{man_cache}{$altpage}) {
+					$page = $altpage;
+				} else {
+					$page = 'git';
+				}
 			}
 			next if (!exists $BotIrc::heap{man_cache}{$page});
 			BotIrc::send_wisdom("the $page manpage is available at $BotIrc::config->{man_baseurl}/$page.html");
