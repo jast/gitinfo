@@ -209,7 +209,7 @@ sub prepare_ctx_targets($$$$) {
 # perform priv/target checks according to the handler's specs.
 # Yay function name overload!
 sub check_ctx(%) {
-	my %cfg = shift;
+	my %cfg = @_;
 	my $authed = $handler_ctx{authed};
 	my $source = $handler_ctx{user};
 	my $channel = $handler_ctx{channel};
