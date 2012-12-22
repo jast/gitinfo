@@ -368,7 +368,9 @@ sub ctx_redirect_to_channel($;$$) {
 	if (exists($config->{channel}{lc $channel})) {
 		$ctx->{"${type}_target"} = $channel;
 		$ctx->{"${type}_type"} = 'privmsg';
+		return 1;
 	}
+	return 0;
 }
 
 # Will redirect wisdom caused by private requests into a channel if the
