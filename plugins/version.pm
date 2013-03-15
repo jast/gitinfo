@@ -1,6 +1,6 @@
 use POE;
-use HTML::HTML5::Parser;
-use XML::LibXML::XPathContext;
+use version ();
+use JSON ();
 
 {
 	irc_commands => {
@@ -19,20 +19,19 @@ use XML::LibXML::XPathContext;
 				return;
 			}
 
-			BotHttp::get('http://git-scm.com/', sub {
-				my $dom = eval { HTML::HTML5::Parser->new->parse_string(shift); };
+      BotHttp::get('https://api.github.com/repos/git/git/tags', sub {
+        my $data = eval { JSON::decode_json( shift ); };
 				if ($@) {
-					BotIrc::send_noise($ctx, ".version error: parsing HTML: $@");
+					BotIrc::send_noise($ctx, ".version error: parsing JSON: $@");
 					return;
 				}
-				my $xpc = XML::LibXML::XPathContext->new($dom);
-				$xpc->registerNs('x', 'http://www.w3.org/1999/xhtml');
-				my @nodes = $xpc->findnodes('//x:div[@class="monitor"]/x:span[@class="version"]');
-				if (!@nodes) {
-					BotIrc::send_noise($ctx, ".version error: secret source of version number is being confusing...");
-					return;
-				}
-				my $version = $nodes[0]->textContent;
+        my @stable = sort { version->parse($a) <=> version->parse($b) }
+                       grep { eval { version->parse($_) } }
+                         map  { $_->{name} }
+                           grep { defined $_->{name} }
+                             @{ $data };
+
+				( my $version = pop @stable ) =~ s!^v!!;
 				if ($version !~ /^\d+(\.\d+)+$/) {
 					BotIrc::send_noise($ctx, ".version error: secret source of version number is speaking in tongues...");
 					return;
