@@ -21,7 +21,9 @@ sub init() {
 			return;
 		}
 		if (HTTP::Status::is_error($response->code)) {
-			$r->{err_cb}($response->status_line, $response);
+			my $content = substr($response->decoded_content .'...', 0, 350);
+			$content =~ s#[\r\n]+# // #sg;
+			$r->{err_cb}($response->status_line .' // '. $content, $response);
 			return;
 		}
 		$r->{ok_cb}($response->decoded_content, $response);
