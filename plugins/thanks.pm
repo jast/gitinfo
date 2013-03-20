@@ -44,7 +44,7 @@ my $moar_karma = sub {
 			my ($source, $targets, $args, $auth) = @_;
 			BotIrc::check_ctx() or return;
 
-			my $res = $BotDb::db->selectall_arrayref("SELECT to_nick, count(to_nick) AS nicksum FROM thanks GROUP BY to_nick ORDER BY nicksum DESC LIMIT 5");
+			my $res = $BotDb::db->selectall_arrayref("SELECT to_nick, count(to_nick) AS nicksum FROM thanks GROUP BY to_nick ORDER BY nicksum DESC LIMIT 5", {Slice => {}});
 			if (!ref($res) || @$res < 5) {
 				BotIrc::send_noise("not enough data for a top karma list");
 				return;
