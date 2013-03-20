@@ -64,4 +64,15 @@ my $str_to_int = sub {
 			BotCtl::send($client, "ok", $links{$args[0]});
 		},
 	},
+	irc_commands => {
+		'shorten' => sub {
+			my ($source, $targets, $args, $auth) = @_;
+			BotIrc::check_ctx(authed => 1) or return;
+			my $nick = BotIrc::nickonly($source);
+			my ($url) = split(/\s+/, $args);
+
+			my $outurl = BotPlugin::call('templink', 'make', $args);
+			BotIrc::send_noise(".shorten: out $outurl in $url");
+		},
+	},
 };
