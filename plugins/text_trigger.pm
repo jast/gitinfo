@@ -133,7 +133,9 @@ my $json_encode = sub {
 				BotIrc::check_ctx(priv => 'trigger_add') or return;
 				$BotDb::db->do("INSERT INTO tt_triggers (trigger) VALUES(?)", {}, $trigger);
 			}
-			BotIrc::check_ctx(priv => 'trigger_edit_locked') or return;
+			if ($res->{lock}) {
+				BotIrc::check_ctx(priv => 'trigger_edit_locked') or return;
+			}
 
 			if ($exp eq '-') {
 				BotIrc::check_ctx(priv => 'trigger_delete') or return;
