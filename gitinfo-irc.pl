@@ -373,6 +373,12 @@ sub ctx_redirect_to_channel($;$$) {
 	return 0;
 }
 
+sub ctx_redirect_to_addressee {
+	my $ctx = (ref($_[0]) eq 'HASH') ? shift: \%handler_ctx;
+	$ctx->{wisdom_target} = $ctx->{wisdom_addressee} // $ctx->{user};
+	$ctx->{wisdom_type} = 'notice';
+}
+
 # Will redirect wisdom caused by private requests into a channel if the
 # request contains "to:#thechannel" and #thechannel is known to us.
 sub ctx_auto_redirect(;$) {
