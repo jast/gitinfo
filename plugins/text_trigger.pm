@@ -152,7 +152,7 @@ my $json_encode = sub {
 	irc_on_anymsg => sub {
 		BotIrc::check_ctx(wisdom_auto_redirect => 1) or return 1;
 
-		TRIGGERS: while ($_[ARG2] =~ /(?:^|\s)!([a-z0-9_.-]+)/ig) {
+		TRIGGERS: while ($_[ARG2] =~ /(?:^|[\s(){}\[\]])!([a-z0-9_.-]+)/ig) {
 			my $query = $1;
 			my ($trigger, $exp);
 			# This construct keeps removing trailing dots until a
