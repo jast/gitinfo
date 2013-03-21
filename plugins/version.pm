@@ -1,6 +1,5 @@
 use POE;
 use version ();
-use JSON ();
 
 {
 	irc_commands => {
@@ -9,53 +8,45 @@ use JSON ();
 			BotIrc::check_ctx() or return;
 			my $nick = BotIrc::nickonly($source);
 			my $ctx = BotIrc::ctx_frozen;
-			if (!defined $ctx->{channel}) {
-				BotIrc::send_noise($ctx, ".version error: must be used in a channel");
+			my $chan = $BotIrc::config->{version_channel};
+
+			my @tags = split(/[\015\012]+/, `GIT_DIR=$BotIrc::config->{git_repo} git tag -l`);
+			chomp @tags;
+			@tags = grep /^v\d(\.\d)*$/, @tags;
+			@tags = map { $_ =~ s/^v//; [split(/\./, $_)] } @tags;
+			@tags = sort {
+				my $i = -1;
+				while (++$i < @$a) {
+					my $va = @$a[$i];
+					my $vb = @$b[$i] // 0;
+					next if $va eq $vb;
+					return $vb <=> $va;
+				}
+				return 0;
+			} @tags;
+
+			if (!@tags) {
+				BotIrc::send_noise($ctx, ".version error: repository contains no tags");
 				return;
 			}
-			my $chan = $ctx->{channel};
-			if (lc($chan) ne lc($BotIrc::config->{version_channel})) {
-				BotIrc::send_noise($ctx, ".version error: this command is really only useful in $BotIrc::config->{version_channel}");
+			my $version = join('.',@{shift @tags});
+
+			my $topic = $BotIrc::irc->channel_topic($chan) || do {
+				BotIrc::send_noise($ctx, ".version error: topic not cached, can't do anything. Sorry.");
+				return;
+			};
+			$topic = $topic->{Value};
+			if ($topic !~ /\b(\d+(?:\.\d+)+)\b/) {
+				BotIrc::send_noise($ctx, ".version error: no current version found in first part of topic; can't change anything.");
 				return;
 			}
-
-			BotHttp::get('https://api.github.com/repos/git/git/tags', sub {
-				my $data = eval { JSON::decode_json( shift ); };
-				if ($@) {
-					BotIrc::send_noise($ctx, ".version error: parsing JSON: $@");
-					return;
-				}
-				my @stable = sort { version->parse($a) <=> version->parse($b) }
-						grep { eval { version->parse($_) } }
-						map  { $_->{name} }
-						grep { defined $_->{name} }
-					@{ $data };
-
-				( my $version = pop @stable ) =~ s!^v!!;
-				if ($version !~ /^\d+(\.\d+)+$/) {
-					BotIrc::send_noise($ctx, ".version error: secret source of version number is speaking in tongues...");
-					return;
-				}
-				my $topic = $BotIrc::irc->channel_topic($chan) || do {
-					BotIrc::send_noise($ctx, ".version error: topic not cached, can't do anything. Sorry.");
-					return;
-				};
-				$topic = $topic->{Value};
-				if ($topic !~ /\b(\d+(?:\.\d+)+)\b/) {
-					BotIrc::send_noise($ctx, ".version error: no current version found in first part of topic; can't change anything.");
-					return;
-				}
-				my $old_ver = $1;
-				if ($old_ver eq $ver) {
-					BotIrc::send_noise($ctx, ".version: still at $old_ver, not updating topic.");
-					return;
-				}
-				$topic =~ s/$old_ver/$version/;
-				$BotIrc::irc->yield(topic => $chan => $topic);
-			}, sub {
-				BotIrc::send_noise($ctx, ".version error: lookup failed: ".shift);
+			my $old_ver = $1;
+			if ($old_ver eq $version) {
+				BotIrc::send_noise($ctx, ".version: still at $old_ver, not updating topic.");
 				return;
-			});
+			}
+			$topic =~ s/$old_ver/$version/;
+			$BotIrc::irc->yield(topic => $chan => $topic);
 		},
 	},
 };
