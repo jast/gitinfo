@@ -9,6 +9,10 @@ my $find_trigger = sub {
 	my @matches = grep(/\Q$query\E/, keys %cache);
 	return undef if (!@matches);
 	@matches = sort { length($a) <=> length($b) } @matches;
+
+	# We don't want to do partial matches for very short queries
+	return undef if ($matches[0] ne $query && length($query) < 3);
+
 	return ($matches[0], $cache{$matches[0]});
 };
 my $cache_entry = sub {
