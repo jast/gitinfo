@@ -57,11 +57,16 @@ my $moar_karma = sub {
 	},
 	irc_on_public => sub {
 		BotIrc::check_ctx() or return 1;
-		return 0 if $_[ARG2] !~ /\b(?:thank\s*you|thanks|thx|cheers)\b/i;
+		my $suffix_form = qr/\b/;
+		if ($_[ARG2] =~ /\+\+/) {
+			$suffix_form = qr/\+\+/;
+		} else {
+			return 0 if $_[ARG2] !~ /\b(?:thank\s*you|thanks|thx|cheers)\b/i;
+		}
 
 		my $ctx = BotIrc::ctx_frozen();
 		my @nicks = map(lc, $BotIrc::irc->channel_list($ctx->{channel}));
-		@nicks = grep { $_[ARG2] =~ /\b\Q$_\E\b/i; } @nicks;
+		@nicks = grep { $_[ARG2] =~ /\b\Q$_\E$suffix_form/i; } @nicks;
 
 		for my $n (@nicks) {
 			if ($n eq lc($BotIrc::irc->nick_name())) {
