@@ -10,26 +10,26 @@ use version ();
 			my $ctx = BotIrc::ctx_frozen;
 			my $chan = $BotIrc::config->{version_channel};
 
+			my $version;
+			my $newest_ver_norm;
 			my @tags = split(/[\015\012]+/, `GIT_DIR=$BotIrc::config->{git_repo} git tag -l`);
-			chomp @tags;
-			@tags = grep /^v\d(\.\d)*$/, @tags;
-			@tags = map { $_ =~ s/^v//; [split(/\./, $_)] } @tags;
-			@tags = sort {
-				my $i = -1;
-				while (++$i < @$a) {
-					my $va = @$a[$i];
-					my $vb = @$b[$i] // 0;
-					next if $va eq $vb;
-					return $vb <=> $va;
+			foreach my $tag (@tags) {
+				next if $tag !~ /^v(\d(?:\.\d)*)\s*$/;
+				my $v = $1;
+				my @v = split(/\./, $v);
+				$v[2] //= 0;
+				$v[3] //= 0;
+				my $v_norm = join('', map { sprintf("%03d", $_) } @v);
+				if (!defined $newest_ver_norm || $newest_ver_norm lt $v_norm) {
+					$newest_ver_norm = $v_norm;
+					$version = $v;
 				}
-				return 0;
-			} @tags;
+			}
 
-			if (!@tags) {
+			if (!defined $version) {
 				BotIrc::send_noise($ctx, ".version error: repository contains no tags");
 				return;
 			}
-			my $version = join('.',@{shift @tags});
 
 			my $topic = $BotIrc::irc->channel_topic($chan) || do {
 				BotIrc::send_noise($ctx, ".version error: topic not cached, can't do anything. Sorry.");
