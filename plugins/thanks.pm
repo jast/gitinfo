@@ -26,13 +26,21 @@ my $moar_karma = sub {
 			my ($source, $targets, $args, $auth) = @_;
 			BotIrc::check_ctx() or return;
 
-			my @args = split(/\s+/, $args);
+			my @args = map(lc, split(/\s+/, $args));
+			my $placeholders = join(',', map {; '?' } @args);
+
+			my $d30 = $BotDb::db->selectall_hashref("SELECT to_nick, CAST(count(to_nick)/10 AS INTEGER) AS nicksum FROM thanks WHERE to_nick IN ($placeholders) AND created_at > date('now','-30 day') GROUP BY to_nick", 'to_nick', {}, @args);
+			my $given = $BotDb::db->selectall_hashref("SELECT from_nick, CAST(count(from_nick)/10 AS INTEGER) AS nicksum FROM thanks WHERE from_nick IN ($placeholders) GROUP BY from_nick", 'from_nick', {}, @args);
+
 			my @karma = ();
 			for my $n (@args) {
-				next if (!exists $karma{lc $n});
-				my $k = int($karma{lc $n}/10);
+				next if (!exists $karma{$n});
+				my $k = int($karma{$n}/10);
 				next if !$k;
-				push @karma, "$n: $k";
+				my $info = "$n: $k";
+				$info .= " ($d30->{$n}{nicksum} in past 30 days)" if exists $d30->{$n};
+				$info .= " ($given->{$n}{nicksum} given out)" if exists $given->{$n};
+				push @karma, $info;
 			}
 			if (!@karma) {
 				BotIrc::send_wisdom("the karma of the given users is shrouded in the mists of uncertainty.");
