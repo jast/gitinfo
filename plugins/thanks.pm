@@ -44,7 +44,9 @@ my $moar_karma = sub {
 			my ($source, $targets, $args, $auth) = @_;
 			BotIrc::check_ctx() or return;
 
-			my $res = $BotDb::db->selectall_arrayref("SELECT to_nick, count(to_nick) AS nicksum FROM thanks GROUP BY to_nick ORDER BY nicksum DESC LIMIT 5", {Slice => {}});
+			my $all = ($args =~ /^all$/);
+			my $all_filter = $all ? "" : " WHERE created_at > date('now','-30 day')";
+			my $res = $BotDb::db->selectall_arrayref("SELECT to_nick, count(to_nick) AS nicksum FROM thanks$all_filter GROUP BY to_nick ORDER BY nicksum DESC LIMIT 5", {Slice => {}});
 			if (!ref($res) || @$res < 5) {
 				BotIrc::send_noise("not enough data for a top karma list");
 				return;
@@ -52,7 +54,8 @@ my $moar_karma = sub {
 			splice @$res, 5;
 			my @top = map { $_->{to_nick} .": ". int($_->{nicksum}/10) } @$res;
 
-			BotIrc::send_wisdom("top karmic beings: ". join(',  ', @top));
+			my $all_msg = $all ? "of all time" : "of past 30 days ('all' arg to see totals)";
+			BotIrc::send_wisdom("top karmic beings $all_msg: ". join(',  ', @top));
 		}
 	},
 	irc_on_public => sub {
