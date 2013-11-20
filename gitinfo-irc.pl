@@ -64,6 +64,7 @@ our $irc = POE::Component::IRC::State->spawn(
 	'Nick'		=> $config->{nick},
 	'Username'	=> $config->{username},
 	'Ircname'	=> $config->{realname},
+        'Password'      => $config->{server_password},
 	'LocalAddr'	=> $config->{local_addr},
 	'useipv6'	=> $config->{ipv6},
 	'Raw'		=> 1,

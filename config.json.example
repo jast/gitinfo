@@ -10,6 +10,7 @@
 	"local_addr":		"",			// optional
 	"server":		"chat.freenode.net",
 	"server_port":		6667,			// optional
+	"server_password":	""			// optional; password to use when connecting to restricted servers(or bouncers)
 	"ipv6":			false,			// optional
 
 	"superadmin":		"jast",			// magically authorized to do everything
