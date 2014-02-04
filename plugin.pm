@@ -16,7 +16,7 @@ sub init {
 			for (split(/\s+/, $args[2])) {
 				BotDb::add_priv(lc($args[1]), lc($_));
 			}
-		} elsif ($args[0] =~ /^(?:remove|rm|del|delete)$) {
+		} elsif ($args[0] =~ /^(?:remove|rm|del|delete)$/) {
 			for (split(/\s+/, $args[2])) {
 				BotDb::del_priv(lc($args[1]), lc($_));
 			}

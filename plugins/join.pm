@@ -20,7 +20,7 @@ use POE;
 				return;
 			}
 			if ($channel !~ /^#\S+$/) {
-				BotIrc::send_noise("I'm not particularly strict about channel names but you definitely didn't pass me a valid one there.")
+				BotIrc::send_noise("I'm not particularly strict about channel names but you definitely didn't pass me a valid one there.");
 				return;
 			}
 			if (!exists $BotIrc::config->{channel}{lc $channel}) {
