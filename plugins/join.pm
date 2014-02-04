@@ -6,12 +6,12 @@ use POE;
 			BotIrc::check_ctx(priv => 'join') or return;
 
 			chomp $args;
-			my $channel = split(/\s+/, $args);
+			my ($channel) = split(/\s+/, $args);
 			if (!$channel) {
 				# Auto-join
 				my $chans = $BotIrc::irc->channels();
 				my @new_chans = ();
-				for (@{$BotIrc::config->{channel}}) {
+				for (keys %{$BotIrc::config->{channel}}) {
 					next if (exists $chans->{uc $_});
 					$BotIrc::irc->yield(join => $_);
 					push @new_chans, $_;
