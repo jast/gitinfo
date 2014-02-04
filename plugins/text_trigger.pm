@@ -156,7 +156,7 @@ my $json_encode = sub {
 	irc_on_anymsg => sub {
 		BotIrc::check_ctx(wisdom_auto_redirect => 1) or return 1;
 
-		TRIGGERS: while ($_[ARG2] =~ /(?:^|[\s(){}\[\]])!([a-z0-9_.-]+)(\@p)?/ig) {
+		TRIGGERS: while ($_[ARG2] =~ /(?:^|[\s(){}\[\]])!([a-z0-9_.-]+)(\@[p*])?/ig) {
 			my $query = $1;
 			my $as_private = $2;
 			my ($trigger, $exp);
@@ -177,8 +177,9 @@ my $json_encode = sub {
 
 			my $trigger_exp = "";
 			$trigger_exp = "[!$trigger] " if $trigger ne $query;
+			BotIrc::ctx_set_addressee(undef) if defined $as_private && $as_private =~ /\*/;
 
-			BotIrc::ctx_redirect_to_addressee() if defined $as_private;
+			BotIrc::ctx_redirect_to_addressee() if defined $as_private && $as_private =~ /p/;
 			BotIrc::send_wisdom("$trigger_exp$exp");
 		}
 		return 0;
