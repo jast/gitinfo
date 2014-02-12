@@ -41,7 +41,7 @@ my $cache_items = sub {
 				BotIrc::send_noise("Okay.");
 			} elsif ($cmd eq 'delete') {
 				BotIrc::check_ctx(priv => 'random_delete') or return;
-				$BotDb::db->do("DELETE FROM random_stuff WHERE rowid=?", $data);
+				$BotDb::db->do("DELETE FROM random_stuff WHERE rowid=?", {}, $data);
 				$cache_items->();
 				BotIrc::send_noise("Okay.");
 			}
