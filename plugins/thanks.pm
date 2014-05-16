@@ -69,8 +69,10 @@ my $moar_karma = sub {
 	irc_on_public => sub {
 		BotIrc::check_ctx() or return 1;
 		my $suffix_form = qr/\b/;
+		my $is_suffix;
 		if ($_[ARG2] =~ /\+\+/) {
 			$suffix_form = qr/\+\+/;
+			$is_suffix = 1;
 		} else {
 			return 0 if $_[ARG2] !~ /\b(?:thank\s*you|thanks|thx|cheers)\b/i;
 		}
@@ -82,7 +84,11 @@ my $moar_karma = sub {
 		for my $n (@nicks) {
 			if ($n eq lc($BotIrc::irc->nick_name())) {
 				BotIrc::ctx_set_addressee(BotIrc::ctx_source());
-				BotIrc::send_wisdom("you're welcome, but please note that I'm a bot. I'm not programmed to care.");
+				if ($is_suffix) {
+					BotIrc::send_wisdom("as a bot, I live on a higher plane of existence than you do. Karma has no meaning here.");
+				} else {
+					BotIrc::send_wisdom("you're welcome, but please note that I'm a bot. I'm not programmed to care.");
+				}
 			}
 			$moar_karma->($n);
 			$BotDb::db->do("INSERT INTO thanks (from_nick, to_nick) VALUES(?, ?)", {}, lc(BotIrc::ctx_source()), $n);
