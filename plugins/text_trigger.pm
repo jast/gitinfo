@@ -173,6 +173,7 @@ my $json_encode = sub {
 			if ($exp =~ /^\@!([a-z_.-]+)$/i) {
 				($trigger, $exp) = $find_trigger->($1);
 			}
+			next if $exp =~ m(^\@/dev/null(?:\s+\(.*\)|)$);
 			next if !defined $trigger;
 
 			my $trigger_exp = "";
