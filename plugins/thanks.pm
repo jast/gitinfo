@@ -82,6 +82,7 @@ my $moar_karma = sub {
 		@nicks = grep { $_[ARG2] =~ /\b\Q$_\E$suffix_form/i; } @nicks;
 
 		for my $n (@nicks) {
+			next if $n eq lc(BotIrc::ctx_source());
 			if ($n eq lc($BotIrc::irc->nick_name())) {
 				BotIrc::ctx_set_addressee(BotIrc::ctx_source());
 				if ($is_suffix) {
