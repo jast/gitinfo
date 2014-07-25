@@ -27,6 +27,7 @@ my $moar_karma = sub {
 			BotIrc::check_ctx() or return;
 
 			my @args = map(lc, split(/\s+/, $args));
+			@args = lc(BotIrc::ctx_source()) if !@args || !$args[0];
 			my $placeholders = join(',', map {; '?' } @args);
 
 			my $d30 = $BotDb::db->selectall_hashref("SELECT to_nick, CAST(count(to_nick)/10 AS INTEGER) AS nicksum FROM thanks WHERE to_nick IN ($placeholders) AND created_at > date('now','-30 day') GROUP BY to_nick", 'to_nick', {}, @args);
