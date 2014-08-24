@@ -22,6 +22,7 @@ my $cache_entry = sub {
 		$cache{$_[0]} = $_[1];
 	}
 };
+my %last;
 # Ugly recoding hack to work around double encoding somehow caused by Perl+JSON
 my $json_encode = sub {
 	encode('iso-8859-1', to_json(shift, {canonical => 1}));
@@ -193,6 +194,14 @@ my $json_encode = sub {
 			BotIrc::ctx_set_addressee(undef) if defined $as_private && $as_private =~ /\*/;
 
 			BotIrc::ctx_redirect_to_addressee() if defined $as_private && $as_private =~ /p/;
+
+			# Squelch duplicate messages
+			my $target = BotIrc::ctx_target('wisdom');
+			my $last = $last{$target};
+			next if $last && $last->[0] eq $trigger && (time < ($last->[1]+10));
+			$last{$target} = [$trigger, scalar time];
+			BotIrc::info("added last info: ".$json_encode->($last{$target}));
+
 			BotIrc::send_wisdom("$trigger_exp$exp");
 		}
 		return 0;
