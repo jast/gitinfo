@@ -7,6 +7,13 @@ my $moar_karma = sub {
 	$karma{$n}++;
 };
 
+my $unhilite = sub {
+	my $n = shift;
+	substr($n, 1, 0) = "\xE2\x80\x8D"; # U+200D ZERO WIDTH JOINER
+	# XXX- need to port to Unicode strings to get rid of this atrocity
+	$n;
+};
+
 {
 	schemata => {
 		0 => [
@@ -38,7 +45,8 @@ my $moar_karma = sub {
 				next if (!exists $karma{$n});
 				my $k = int($karma{$n}/10);
 				next if !$k;
-				my $info = "$n: $k";
+				my $n_escaped = $unhilite->($n);
+				my $info = "$n_escaped: $k";
 				$info .= " ($d30->{$n}{nicksum} in past 30 days)" if exists $d30->{$n};
 				$info .= " ($given->{$n}{nicksum} given out)" if exists $given->{$n};
 				push @karma, $info;
@@ -61,7 +69,7 @@ my $moar_karma = sub {
 				return;
 			}
 			splice @$res, 5;
-			my @top = map { $_->{to_nick} .": ". int($_->{nicksum}/10) } @$res;
+			my @top = map { $unhilite->($_->{to_nick}) .": ". int($_->{nicksum}/10) } @$res;
 
 			my $all_msg = $all ? "of all time" : "of past 30 days ('all' arg to see totals)";
 			BotIrc::send_wisdom("top karmic beings $all_msg: ". join(',  ', @top));
