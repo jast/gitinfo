@@ -38,6 +38,10 @@ my $json_encode = sub {
 				changed_by TEXT NOT NULL,
 				changed_at INT NOT NULL DEFAULT CURRENT_TIMESTAMP)",
 		],
+		1 => [
+			"ALTER TABLE tt_triggers ADD COLUMN
+				deleted INTEGER NOT NULL DEFAULT 0"
+		],
 	},
 	on_load => sub {
 		my $res = $BotDb::db->selectall_arrayref("SELECT trigger, exp FROM tt_trigger_contents WHERE approved=1 ORDER BY changed_at DESC", {Slice => {}});
@@ -58,7 +62,7 @@ my $json_encode = sub {
 		},
 		trigger_recentchanges => sub {
 			my ($client, $data, @args) = @_;
-			my $res = $BotDb::db->selectall_arrayref("SELECT trigger, exp, changed_by, changed_at FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1 ORDER BY changed_at DESC LIMIT 20", {Slice => {}});
+			my $res = $BotDb::db->selectall_arrayref("SELECT trigger, exp, changed_by, changed_at FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1 AND deleted=0 ORDER BY changed_at DESC LIMIT 20", {Slice => {}});
 			BotCtl::send($client, "ok", $json_encode->($res));
 		},
 		trigger_edit => sub {
@@ -83,6 +87,9 @@ my $json_encode = sub {
 				return;
 			}
 			$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $args[0], $args[1], $data->{level});
+			if ($res->{deleted}) {
+				$BotDb::db->do("UPDATE tt_triggers SET deleted = 0 WHERE trigger=?", {}, $res->{trigger});
+			}
 			$cache_entry->($args[0], $args[1]);
 			BotCtl::send($client, "ok");
 		},
@@ -107,6 +114,9 @@ my $json_encode = sub {
 				return;
 			}
 			$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $res->{trigger}, $res->{exp}, $data->{level});
+			if ($res->{deleted}) {
+				$BotDb::db->do("UPDATE tt_triggers SET deleted = 0 WHERE trigger=?", {}, $res->{trigger});
+			}
 			$cache_entry->($res->{trigger}, $res->{exp});
 			BotCtl::send($client, "ok");
 		}
@@ -143,11 +153,13 @@ my $json_encode = sub {
 
 			if ($exp eq '-') {
 				BotIrc::check_ctx(priv => 'trigger_delete') or return;
-				$BotDb::db->do("DELETE FROM tt_trigger_contents WHERE trigger=?", {}, $trigger);
-				$BotDb::db->do("DELETE FROM tt_triggers WHERE trigger=?", {}, $trigger);
+				$BotDb::db->do("UPDATE tt_triggers SET deleted = 1 WHERE trigger=?", {}, $trigger);
 				$cache_entry->($trigger, undef);
 			} else {
 				$BotDb::db->do("INSERT INTO tt_trigger_contents (trigger, exp, changed_by) VALUES(?, ?, ?)", {}, $trigger, $exp, $source);
+				if ($res->{deleted}) {
+					$BotDb::db->do("UPDATE tt_triggers SET deleted = 0 WHERE trigger=?", {}, $res->{trigger});
+				}
 				$cache_entry->($trigger, $exp);
 			}
 			BotIrc::send_noise("Okay.");
