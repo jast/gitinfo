@@ -183,7 +183,7 @@ my $json_encode = sub {
 				next TRIGGERS if (!($query =~ s/\.$//));
 			}
 
-			if ($exp =~ /^\@!([a-z_.-]+)$/i) {
+			if ($exp =~ /^\@!([a-z0-9_.-]+)$/i) {
 				($trigger, $exp) = $find_trigger->($1);
 			}
 			next if $exp =~ m(^\@/dev/null(?:\s+\(.*\)|)$);
