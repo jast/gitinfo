@@ -23,8 +23,8 @@ my $dolink = sub { BotPlugin::call('templink', 'make', shift); };
 				# Most interested in: related topics
 				if ($data->{Type} =~ /^[CD]$/o) {
 					my @topics = @{$data->{RelatedTopics}};
-					my $suffix = (@topics > 3) ? " | ..." : "";
-					splice @topics, 3;
+					my $suffix = (@topics > 5) ? " | ..." : "";
+					splice @topics, 5;
 					my $topics = join(" | ", map { "$_->{Text} <". $dolink->($_->{FirstURL}) .">" } @topics);
 					BotIrc::send_wisdom($ctx, "$topics$suffix");
 					return;
