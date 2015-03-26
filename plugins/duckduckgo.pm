@@ -1,10 +1,8 @@
 use POE;
-use HTML::HTML5::Parser;
-use HTML::Entities;
 use HTTP::Request::Common;
 use JSON;
+use Mojo::DOM;
 use URI::Escape;
-use XML::LibXML::XPathContext;
 
 my $dolink = sub { BotPlugin::call('templink', 'make', shift); };
 {
@@ -65,33 +63,32 @@ my $dolink = sub { BotPlugin::call('templink', 'make', shift); };
 			my $ctx = BotIrc::ctx_frozen;
 
 			BotHttp::request($req, sub {
-				my $dom = eval { HTML::HTML5::Parser->new->parse_string(shift); };
+				my $dom;
+				eval {
+					$dom = Mojo::DOM->new(shift);
+				};
 				if ($@) {
 					BotIrc::send_noise($ctx, ".search error: parsing HTML: $@");
 					return;
 				}
-				my $xpc = XML::LibXML::XPathContext->new($dom);
-				$xpc->registerNs('x', 'http://www.w3.org/1999/xhtml');
-				my @nodes = $xpc->findnodes('descendant::x:div[@class="links_main links_deep"]');
-				if (!@nodes) {
+				my $nodes = $dom->find('.web-result');
+				if (!$nodes || !@$nodes) {
 					BotIrc::send_wisdom($ctx, ".search: nothing found.");
 					return;
 				}
-				my $suffix = (@nodes > 3) ? " | ..." : "";
-				splice @nodes, 3;
-				@nodes = map {
-					my $url = $xpc->findvalue('x:a[1]/@href', $_);
-					my $title = $xpc->findvalue("x:a[1]", $_);
-					$title =~ s/<(?:[^>]+)>//g;
-					$title = decode_entities($title);
+				my $suffix = (@$nodes > 3) ? " | ..." : "";
+				splice @$nodes, 3;
+				$nodes = [ map {
+					my $url = $_->at('a.large')->attr('href');
+					my $title = $_->at('a.large')->all_text;
 					$url = $dolink->($url) if $url;
 					$url ? "$title <$url>" : undef;
-				} @nodes;
-				if (!$nodes[0]) {
+				} @$nodes ];
+				if (!$nodes->[0]) {
 					BotIrc::send_wisdom($ctx, ".search: nothing found.");
 					return;
 				}
-				my $nodes = join(" | ", @nodes);
+				$nodes = join(" | ", @$nodes);
 				BotIrc::send_wisdom($ctx, "$nodes$suffix");
 			}, sub {
 				BotIrc::send_noise($ctx, ".search error: query '$args' failed: ".shift);
