@@ -36,7 +36,12 @@ my $str_to_int = sub {
 	functions => {
 		make => sub {
 			my $url = shift;
-			$BotDb::db->do("INSERT INTO templinks (url) VALUES(?)", {}, $url);
+			eval {
+				$BotDb::db->do("INSERT INTO templinks (url) VALUES(?)", {}, $url);
+			};
+			if ($@) {
+				return undef;
+			}
 			my $id = $BotDb::db->last_insert_id(undef, undef, "templinks", "id");
 			my $tag = $int_to_str->($id);
 			$links{$tag} = $url;
