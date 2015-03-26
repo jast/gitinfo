@@ -63,7 +63,7 @@ my $json_encode = sub {
 		},
 		trigger_recentchanges => sub {
 			my ($client, $data, @args) = @_;
-			my $res = $BotDb::db->selectall_arrayref("SELECT trigger, exp, changed_by, changed_at FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1 AND deleted=0 ORDER BY changed_at DESC LIMIT 20", {Slice => {}});
+			my $res = $BotDb::db->selectall_arrayref("SELECT trigger, exp, changed_by, changed_at FROM tt_triggers NATURAL JOIN tt_trigger_contents WHERE approved=1 AND deleted=0 ORDER BY changed_at DESC", {Slice => {}});
 			BotCtl::send($client, "ok", $json_encode->($res));
 		},
 		trigger_edit => sub {
@@ -200,7 +200,6 @@ my $json_encode = sub {
 			my $last = $last{$target};
 			next if $last && $last->[0] eq $trigger && (time < ($last->[1]+10));
 			$last{$target} = [$trigger, scalar time];
-			BotIrc::info("added last info: ".$json_encode->($last{$target}));
 
 			BotIrc::send_wisdom("$trigger_exp$exp");
 		}
