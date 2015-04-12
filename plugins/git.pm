@@ -20,9 +20,9 @@ my %repo_providers = (
 		tree => "https://bitbucket.org/{key}/src/{ref}/{path}",
 	},
 	kernel => {
-		shortlog => "https://git.kernel.org/cgit/{key}/log/?h={ref}",
-		blob => "https://git.kernel.org/cgit/{key}/tree/{path}?h={ref}",
-		tree => "https://git.kernel.org/cgit/{key}/tree/{path}?h={ref}",
+		shortlog => "https://git.kernel.org/cgit/{key}.git/log/?h={ref}",
+		blob => "https://git.kernel.org/cgit/{key}.git/tree/{path}?h={ref}",
+		tree => "https://git.kernel.org/cgit/{key}.git/tree/{path}?h={ref}",
 	},
 	repo => {
 		shortlog => "http://repo.or.cz/w/{key}/shortlog/{ref}",
