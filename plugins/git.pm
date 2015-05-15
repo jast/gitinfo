@@ -56,12 +56,17 @@ my %repo_providers = (
 			my $mode = defined $path ? 'blob' : 'shortlog';
 			$mode = 'tree' if $path && $path =~ m#/$#;
 
+			my $frag;
+			($path, $frag) = split(/#/, ($path||''), 2);
+			$frag ||= '';
+			$frag = "#$frag" if $frag;
+
 			my $url = $repo_providers{$type}{$mode};
 			$url =~ s/\{key\}/$key/;
 			$url =~ s/\{ref\}/$ref/;
 			$url =~ s/\{path\}/$path/;
 
-			BotIrc::send_wisdom("Git web link: $url");
+			BotIrc::send_wisdom("Git web link: $url$frag");
 		}
 		return 0;
 	},
