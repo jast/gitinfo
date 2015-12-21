@@ -8,26 +8,31 @@ my %repo_providers = (
 		shortlog => "https://github.com/{key}/commits/{ref}",
 		blob => "https://github.com/{key}/blob/{ref}/{path}",
 		tree => "https://github.com/{key}/tree/{ref}/{path}",
+		main => "https://github.com/{key}",
 	},
 	gitlab => {
 		shortlog => "https://gitlab.com/{key}/commits/{ref}",
 		blob => "https://gitlab.com/{key}/blob/{ref}/{path}",
 		tree => "https://gitlab.com/{key}/tree/{ref}/{path}",
+		main => "https://gitlab.com/{key}",
 	},
 	bitbucket => {
 		shortlog => "https://bitbucket.org/{key}/commits/{ref}",
 		blob => "https://bitbucket.org/{key}/src/{ref}/{path}",
 		tree => "https://bitbucket.org/{key}/src/{ref}/{path}",
+		main => "https://bitbucket.org/{key}",
 	},
 	kernel => {
 		shortlog => "https://git.kernel.org/cgit/{key}.git/log/?h={ref}",
 		blob => "https://git.kernel.org/cgit/{key}.git/tree/{path}?h={ref}",
 		tree => "https://git.kernel.org/cgit/{key}.git/tree/{path}?h={ref}",
+		main => "https://git.kernel.org/cgit/{key}.git",
 	},
 	repo => {
 		shortlog => "http://repo.or.cz/w/{key}/shortlog/{ref}",
 		blob => "http://repo.or.cz/w/{key}/blob/{ref}:/{path}",
 		tree => "http://repo.or.cz/w/{key}/tree/{ref}:/{path}",
+		main => "http://repo.or.cz/w/{key}",
 	},
 );
 
@@ -46,15 +51,19 @@ my %repo_providers = (
 			my $path;
 			if ($spec =~ s/^([^:]*)://) {
 				$ref = $1 unless $1 eq '';
-			} else {
+			} elsif (defined $spec) {
 				$ref = $spec;
 				$path = []; # sticky undef
+			} else {
+				$ref = [];
+				$path = [];
 			}
 			$path = $spec unless ref $path;
 			undef $path if ref $path;
 
 			my $mode = defined $path ? 'blob' : 'shortlog';
 			$mode = 'tree' if $path && $path =~ m#/$#;
+			$mode = 'main' if ref $ref;
 
 			my $frag;
 			($path, $frag) = split(/#/, ($path||''), 2);
