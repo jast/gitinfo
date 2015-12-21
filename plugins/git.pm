@@ -62,7 +62,7 @@ my %repo_providers = (
 			undef $path if ref $path;
 
 			my $mode = defined $path ? 'blob' : 'shortlog';
-			$mode = 'tree' if $path && $path =~ m#/$#;
+			$mode = 'tree' if defined $path && $path =~ m#(?:^|/)$#;
 			$mode = 'main' if ref $ref;
 
 			my $frag;
