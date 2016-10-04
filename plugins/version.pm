@@ -14,7 +14,7 @@ use version ();
 			my $newest_ver_norm;
 			my @tags = split(/[\015\012]+/, `GIT_DIR=$BotIrc::config->{git_repo} git tag -l`);
 			foreach my $tag (@tags) {
-				next if $tag !~ /^v(\d(?:\.\d)*)\s*$/;
+				next if $tag !~ /^v(\d+(?:\.\d+)*)\s*$/;
 				my $v = $1;
 				my @v = split(/\./, $v);
 				$v[2] //= 0;
