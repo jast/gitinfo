@@ -40,7 +40,11 @@ my %repo_providers = (
 	irc_on_anymsg => sub {
 		BotIrc::check_ctx(wisdom_auto_redirect => 1) or return 1;
 
-		while ($_[ARG2] =~ /git:(\S+)/ig) {
+		my $text = $_[ARG2];
+		$text =~ s/git::\s*(\S+)/git:github:git\/git:$1/g;
+		$text =~ s/git\[(\S+)\s+(\S+?)\]\s*(\S+)/git:$1:$2:$3/g;
+
+		while ($text =~ /git:(\S+)/ig) {
 			my $query = $1;
 			$query =~ s/^"(.+)"$/$1/;
 			my ($type, $key, $spec) = split(/:/, $query, 3);
